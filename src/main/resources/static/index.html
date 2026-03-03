@@ -3,40 +3,374 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart City Project</title>
+    <title>Smart City Project - Login</title>
     <style>
+        /* Eco wellness inspired styling */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            background: linear-gradient(135deg, #a8e6cf 0%, #dcedc8 50%, #f8f8f8 100%);
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            justify-content: center;
+            padding: 20px;
+            line-height: 1.6;
+            position: relative;
+            overflow: hidden;
         }
-        .container {
-            text-align: center;
-            padding: 2rem;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-        }
-        h1 {
-            margin-bottom: 1rem;
-        }
-        .status {
-            color: #4ade80;
-            font-weight: bold;
-        }
+        .nature-background { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+        .floating-leaf { position: absolute; width: 20px; height: 20px; background: radial-gradient(ellipse at center, #4caf50, #66bb6a); border-radius: 0 100% 0 100%; opacity: 0.4; animation: floatLeaf 8s ease-in-out infinite; }
+        .leaf-1 { top: 20%; left: 10%; transform: rotate(45deg); }
+        .leaf-2 { top: 60%; left: 85%; transform: rotate(-30deg); animation-delay: 2s; }
+        .leaf-3 { top: 80%; left: 15%; transform: rotate(60deg); animation-delay: 4s; }
+        .leaf-4 { top: 30%; left: 75%; transform: rotate(-45deg); animation-delay: 6s; }
+        @keyframes floatLeaf { 0%, 100% { transform: translateY(0) rotate(var(--rotation, 0deg)); opacity: 0.4; } 50% { transform: translateY(-20px) rotate(calc(var(--rotation, 0deg) + 10deg)); opacity: 0.7; } }
+        .login-container { width: 100%; max-width: 460px; position: relative; z-index: 1; }
+        .wellness-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(76, 175, 80, 0.2); border-radius: 32px; padding: 48px 40px; position: relative; overflow: hidden; box-shadow: 0 20px 40px rgba(76, 175, 80, 0.15); }
+        .organic-border { position: absolute; top: 0; left: 0; right: 0; height: 6px; background: linear-gradient(90deg, #4caf50, #8bc34a, #cddc39, #8bc34a, #4caf50); background-size: 200% 100%; animation: organicFlow 4s ease-in-out infinite; border-radius: 32px 32px 0 0; }
+        @keyframes organicFlow { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+        .mindful-header { text-align: center; margin-bottom: 24px; color: #2e7d32; }
+        .zen-logo { position: relative; width: 80px; height: 80px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; color: #4caf50; }
+        .zen-logo svg { position: relative; z-index: 2; animation: zenBreath 4s ease-in-out infinite; }
+        .zen-glow { position: absolute; inset: 0; background: radial-gradient(circle, rgba(76, 175, 80, 0.2) 0%, transparent 70%); border-radius: 50%; animation: zenGlow 3s ease-in-out infinite; }
+        @keyframes zenBreath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        @keyframes zenGlow { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.2); opacity: 0.8; } }
+        .mindful-header h1 { font-size: 1.8rem; letter-spacing: -0.02em; margin-bottom: 6px; }
+        .mindful-header p { color: #66bb6a; font-size: 15px; }
+        .form-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0 30px; }
+        .tab-button { position: relative; border: 1.5px solid rgba(76, 175, 80, 0.2); background: rgba(76, 175, 80, 0.05); color: #2e7d32; border-radius: 16px; padding: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+        .tab-button.active { background: linear-gradient(135deg, #4caf50, #66bb6a, #8bc34a); color: #fff; border-color: transparent; box-shadow: 0 10px 24px rgba(76, 175, 80, 0.2); }
+        .harmony-form { display: none; }
+        .harmony-form.active { display: block; }
+        .organic-field { position: relative; margin-bottom: 26px; }
+        .field-nature { position: absolute; inset: 0; background: rgba(76, 175, 80, 0.05); border: 1.5px solid rgba(76, 175, 80, 0.2); border-radius: 20px; transition: all 0.3s ease; }
+        .organic-field input, .organic-field select { width: 100%; background: transparent; border: none; padding: 18px 56px 18px 20px; color: #2e7d32; font-size: 16px; font-weight: 400; outline: none; position: relative; z-index: 2; font-family: inherit; appearance: none; }
+        .organic-field input::placeholder { color: transparent; }
+        .organic-field label { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #81c784; font-size: 16px; font-weight: 400; pointer-events: none; transition: all 0.3s ease; z-index: 3; background: rgba(255, 255, 255, 0.9); padding: 0 8px; }
+        .organic-field input:focus + label,
+        .organic-field input:not(:placeholder-shown) + label,
+        .organic-field select:focus + label,
+        .organic-field select:valid + label { top: 0; font-size: 13px; font-weight: 600; color: #4caf50; transform: translateY(-50%); }
+        .organic-field input:focus ~ .field-nature,
+        .organic-field select:focus ~ .field-nature { border-color: #4caf50; background: rgba(76, 175, 80, 0.1); box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15); }
+        .growth-indicator { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; z-index: 4; }
+        .leaf-sprout { width: 100%; height: 100%; background: #4caf50; border-radius: 0 100% 0 100%; opacity: 0; transform: scale(0) rotate(45deg); transition: all 0.25s ease; }
+        .organic-field input:focus ~ .growth-indicator .leaf-sprout,
+        .organic-field input:valid ~ .growth-indicator .leaf-sprout,
+        .organic-field select:focus ~ .growth-indicator .leaf-sprout,
+        .organic-field select:valid ~ .growth-indicator .leaf-sprout { opacity: 1; transform: scale(1) rotate(45deg); }
+        .nature-toggle { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: #81c784; padding: 8px; border-radius: 12px; transition: all 0.3s ease; z-index: 4; display: flex; align-items: center; justify-content: center; }
+        .nature-toggle:hover { color: #4caf50; background: rgba(76, 175, 80, 0.1); }
+        .eye-hidden { display: none; }
+        .nature-toggle.toggle-visible .eye-visible { display: none; }
+        .nature-toggle.toggle-visible .eye-hidden { display: block; }
+        .mindful-options { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; color: #4caf50; font-weight: 500; }
+        .zen-checkbox { display: flex; align-items: center; cursor: pointer; font-size: 14px; }
+        .zen-checkbox input[type="checkbox"] { display: none; }
+        .checkbox-leaf { width: 22px; height: 22px; margin-right: 10px; position: relative; display: flex; align-items: center; justify-content: center; }
+        .leaf-shape { width: 100%; height: 100%; background: rgba(76, 175, 80, 0.1); border: 1.5px solid rgba(76, 175, 80, 0.3); border-radius: 0 100% 0 100%; transform: rotate(45deg); transition: all 0.3s ease; position: absolute; }
+        .checkbox-leaf svg { color: transparent; transition: color 0.3s ease; position: relative; z-index: 1; transform: rotate(-45deg); }
+        .zen-checkbox input[type="checkbox"]:checked + .checkbox-leaf .leaf-shape { background: #4caf50; border-color: #4caf50; box-shadow: 0 0 12px rgba(76, 175, 80, 0.35); }
+        .zen-checkbox input[type="checkbox"]:checked + .checkbox-leaf svg { color: #ffffff; }
+        .healing-link { color: #4caf50; text-decoration: none; font-size: 14px; font-weight: 600; position: relative; transition: all 0.3s ease; }
+        .healing-link::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: linear-gradient(90deg, #4caf50, #8bc34a); transition: width 0.3s ease; }
+        .healing-link:hover::after { width: 100%; }
+        .harmony-button { width: 100%; background: transparent; color: #ffffff; border: none; border-radius: 20px; padding: 0; cursor: pointer; font-family: inherit; font-size: 16px; font-weight: 700; position: relative; margin: 8px 0 16px; overflow: hidden; min-height: 54px; display: flex; align-items: center; justify-content: center; }
+        .button-earth { position: absolute; inset: 0; background: linear-gradient(135deg, #4caf50, #66bb6a, #8bc34a); border-radius: 20px; transition: all 0.3s ease; }
+        .harmony-button:hover .button-earth { background: linear-gradient(135deg, #388e3c, #4caf50, #66bb6a); transform: scale(1.02); }
+        .harmony-button:active .button-earth { transform: scale(0.98); }
+        .button-text { position: relative; z-index: 2; }
+        .button-growth { position: absolute; right: 20px; display: flex; gap: 6px; z-index: 2; opacity: 0; transition: opacity 0.3s ease; }
+        .growing-circle { width: 8px; height: 8px; background: #ffffff; border-radius: 50%; animation: organicGrow 1.5s ease-in-out infinite; }
+        .circle-2 { animation-delay: 0.2s; }
+        .circle-3 { animation-delay: 0.4s; }
+        @keyframes organicGrow { 0%, 80%, 100% { transform: scale(0.8); opacity: 0.6; } 40% { transform: scale(1.2); opacity: 1; } }
+        .harmony-button.loading .button-text { opacity: 0; }
+        .harmony-button.loading .button-growth { opacity: 1; }
+        .button-aura { position: absolute; inset: -3px; background: linear-gradient(135deg, #4caf50, #8bc34a); border-radius: 23px; opacity: 0; filter: blur(12px); transition: opacity 0.3s ease; z-index: -1; }
+        .harmony-button:hover .button-aura { opacity: 0.6; }
+        .message { margin-top: 8px; padding: 12px; border-radius: 12px; text-align: center; display: none; font-size: 13px; font-weight: 600; }
+        .message.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; display: block; }
+        .message.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; display: block; }
+        .organic-field.error .field-nature { border-color: #ff7043; background: rgba(255, 112, 67, 0.1); }
+        .organic-field.error label { color: #ff5722; }
+        .form-toggle { text-align: center; font-size: 14px; color: #66bb6a; margin-top: 12px; }
+        .form-toggle a { color: #4caf50; cursor: pointer; font-weight: 700; text-decoration: none; position: relative; }
+        .form-toggle a::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 2px; background: linear-gradient(90deg, #4caf50, #8bc34a); transition: width 0.3s ease; }
+        .form-toggle a:hover::after { width: 100%; }
+        @media (max-width: 480px) { body { padding: 16px; } .wellness-card { padding: 36px 28px; border-radius: 24px; } .zen-logo { width: 60px; height: 60px; } .form-tabs { grid-template-columns: 1fr 1fr; gap: 8px; } }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>🏙️ Smart City Project</h1>
-    <p>Spring Boot is running!</p>
-    <p class="status">✓ Server Status: Active</p>
-    <p>Built with Spring Boot + React</p>
+<div class="nature-background">
+    <div class="floating-leaf leaf-1"></div>
+    <div class="floating-leaf leaf-2"></div>
+    <div class="floating-leaf leaf-3"></div>
+    <div class="floating-leaf leaf-4"></div>
 </div>
+
+<div class="login-container">
+    <div class="wellness-card">
+        <div class="organic-border"></div>
+        <div class="mindful-header">
+            <div class="zen-logo">
+                <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+                    <circle cx="28" cy="28" r="26" stroke="currentColor" stroke-width="2" fill="none" opacity="0.6"></circle>
+                    <circle cx="28" cy="28" r="18" stroke="currentColor" stroke-width="1.5" fill="none" opacity="0.8"></circle>
+                    <circle cx="28" cy="28" r="10" fill="currentColor" opacity="0.9"></circle>
+                    <path d="M28 18v20M18 28h20" stroke="white" stroke-width="1.5" stroke-linecap="round"></path>
+                </svg>
+                <div class="zen-glow"></div>
+            </div>
+            <h1>Smart City</h1>
+            <p>Grievance Management Portal</p>
+        </div>
+
+        <div class="form-tabs">
+            <button class="tab-button active" id="loginTab" onclick="switchTo('login')">Login</button>
+            <button class="tab-button" id="registerTab" onclick="switchTo('register')">Create Account</button>
+        </div>
+
+        <form class="harmony-form login-form active" onsubmit="event.preventDefault(); handleLogin();">
+            <div class="organic-field">
+                <input type="text" id="loginUsername" placeholder=" " autocomplete="username">
+                <label for="loginUsername">Username</label>
+                <div class="growth-indicator"><div class="leaf-sprout"></div></div>
+                <div class="field-nature"></div>
+            </div>
+            <div class="organic-field">
+                <input type="password" id="loginPassword" placeholder=" " autocomplete="current-password">
+                <label for="loginPassword">Password</label>
+                <button type="button" class="nature-toggle" id="loginPasswordToggle" aria-label="Toggle password visibility" onclick="togglePassword('loginPassword', this)">
+                    <svg class="eye-visible" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 4c-4 0-7 3-8 6 1 3 4 6 8 6s7-3 8-6c-1-3-4-6-8-6zm0 10a4 4 0 110-8 4 4 0 010 8zm0-6a2 2 0 100 4 2 2 0 000-4z" fill="currentColor"></path>
+                    </svg>
+                    <svg class="eye-hidden" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M3 3l14 14M8.5 8.5a2 2 0 002.83 2.83m-.83-4.83a4 4 0 014 4M10 6C6 6 3 9 2 12c.5 1.5 2 3.5 4 4.5M10 14c4 0 7-3 8-6-.5-1.5-2-3.5-4-4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </button>
+                <div class="growth-indicator"><div class="leaf-sprout"></div></div>
+                <div class="field-nature"></div>
+            </div>
+            <div class="mindful-options">
+                <label class="zen-checkbox">
+                    <input type="checkbox" id="rememberLogin" name="remember">
+                    <span class="checkbox-leaf">
+                        <div class="leaf-shape"></div>
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                            <path d="M1 4l2.5 2.5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </span>
+                    <span class="checkbox-text">Keep me signed in</span>
+                </label>
+                <a href="#" class="healing-link">Forgot password?</a>
+            </div>
+            <button type="submit" class="harmony-button">
+                <div class="button-earth"></div>
+                <span class="button-text">Login</span>
+                <div class="button-growth">
+                    <div class="growing-circle"></div>
+                    <div class="growing-circle circle-2"></div>
+                    <div class="growing-circle circle-3"></div>
+                </div>
+                <div class="button-aura"></div>
+            </button>
+            <div class="message" id="loginMessage"></div>
+            <div class="form-toggle">Need an account? <a onclick="switchTo('register')">Sign up</a></div>
+        </form>
+
+        <form class="harmony-form register-form" onsubmit="event.preventDefault(); handleRegister();">
+            <div class="organic-field">
+                <input type="text" id="regUsername" placeholder=" " autocomplete="username">
+                <label for="regUsername">Username</label>
+                <div class="growth-indicator"><div class="leaf-sprout"></div></div>
+                <div class="field-nature"></div>
+            </div>
+            <div class="organic-field">
+                <input type="email" id="regEmail" placeholder=" " autocomplete="email">
+                <label for="regEmail">Email</label>
+                <div class="growth-indicator"><div class="leaf-sprout"></div></div>
+                <div class="field-nature"></div>
+            </div>
+            <div class="organic-field">
+                <input type="tel" id="regPhone" placeholder=" " autocomplete="tel">
+                <label for="regPhone">Phone</label>
+                <div class="growth-indicator"><div class="leaf-sprout"></div></div>
+                <div class="field-nature"></div>
+            </div>
+            <div class="organic-field">
+                <input type="password" id="regPassword" placeholder=" " autocomplete="new-password">
+                <label for="regPassword">Password</label>
+                <button type="button" class="nature-toggle" id="regPasswordToggle" aria-label="Toggle password visibility" onclick="togglePassword('regPassword', this)">
+                    <svg class="eye-visible" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 4c-4 0-7 3-8 6 1 3 4 6 8 6s7-3 8-6c-1-3-4-6-8-6zm0 10a4 4 0 110-8 4 4 0 010 8zm0-6a2 2 0 100 4 2 2 0 000-4z" fill="currentColor"></path>
+                    </svg>
+                    <svg class="eye-hidden" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <path d="M3 3l14 14M8.5 8.5a2 2 0 002.83 2.83m-.83-4.83a4 4 0 014 4M10 6C6 6 3 9 2 12c.5 1.5 2 3.5 4 4.5M10 14c4 0 7-3 8-6-.5-1.5-2-3.5-4-4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                </button>
+                <div class="growth-indicator"><div class="leaf-sprout"></div></div>
+                <div class="field-nature"></div>
+            </div>
+            <div class="organic-field">
+                <select id="regRole" required value="">
+                    <option value="" disabled selected hidden></option>
+                    <option value="CITIZEN">Citizen</option>
+                    <option value="ADMIN">Admin</option>
+                    <option value="OFFICER">Officer</option>
+                </select>
+                <label for="regRole">Role</label>
+                <div class="growth-indicator"><div class="leaf-sprout"></div></div>
+                <div class="field-nature"></div>
+            </div>
+            <button type="submit" class="harmony-button">
+                <div class="button-earth"></div>
+                <span class="button-text">Create Account</span>
+                <div class="button-growth">
+                    <div class="growing-circle"></div>
+                    <div class="growing-circle circle-2"></div>
+                    <div class="growing-circle circle-3"></div>
+                </div>
+                <div class="button-aura"></div>
+            </button>
+            <div class="message" id="registerMessage"></div>
+            <div class="form-toggle">Already registered? <a onclick="switchTo('login')">Login</a></div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:8080';
+
+    function switchTo(mode) {
+        const loginForm = document.querySelector('.login-form');
+        const registerForm = document.querySelector('.register-form');
+        const loginTab = document.getElementById('loginTab');
+        const registerTab = document.getElementById('registerTab');
+
+        const isLogin = mode === 'login';
+        loginForm.classList.toggle('active', isLogin);
+        registerForm.classList.toggle('active', !isLogin);
+        loginTab.classList.toggle('active', isLogin);
+        registerTab.classList.toggle('active', !isLogin);
+        clearMessages();
+    }
+
+    function toggleForm() {
+        const isLoginActive = document.querySelector('.login-form').classList.contains('active');
+        switchTo(isLoginActive ? 'register' : 'login');
+    }
+
+    function togglePassword(inputId, buttonEl) {
+        const input = document.getElementById(inputId);
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        buttonEl.classList.toggle('toggle-visible', isHidden);
+    }
+
+    function clearMessages() {
+        document.getElementById('loginMessage').innerHTML = '';
+        document.getElementById('registerMessage').innerHTML = '';
+        document.getElementById('loginMessage').className = 'message';
+        document.getElementById('registerMessage').className = 'message';
+    }
+
+    function showMessage(elementId, message, type) {
+        const element = document.getElementById(elementId);
+        element.innerHTML = message;
+        element.className = `message ${type}`;
+    }
+
+    async function handleLogin() {
+        const username = document.getElementById('loginUsername').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
+
+        if (!username || !password) {
+            showMessage('loginMessage', 'Please fill in all fields', 'error');
+            return;
+        }
+
+        try {
+            console.log('Attempting login to:', `${API_BASE}/api/auth/login`);
+            const response = await fetch(`${API_BASE}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            console.log('Response status:', response.status);
+            const data = await response.json();
+            console.log('Response data:', data);
+
+            if (response.ok) {
+                localStorage.setItem('civicpulse_token', data.token);
+                localStorage.setItem('civicpulse_user', JSON.stringify({
+                    username: data.username,
+                    role: data.role
+                }));
+                showMessage('loginMessage', 'Login successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/Dashboard.html';
+                }, 1000);
+            } else {
+                showMessage('loginMessage', data.error || 'Login failed', 'error');
+            }
+        } catch (error) {
+            console.error('Error details:', error);
+            showMessage('loginMessage', 'Connection error: ' + error.message, 'error');
+        }
+    }
+
+    async function handleRegister() {
+        const username = document.getElementById('regUsername').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const phone = document.getElementById('regPhone').value.trim();
+        const password = document.getElementById('regPassword').value.trim();
+        const role = document.getElementById('regRole').value;
+
+        if (!username || !email || !phone || !password) {
+            showMessage('registerMessage', 'Please fill in all fields', 'error');
+            return;
+        }
+
+        try {
+            console.log('Attempting registration to:', `${API_BASE}/api/auth/register`);
+            const response = await fetch(`${API_BASE}/api/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, phone, password, role })
+            });
+
+            console.log('Response status:', response.status);
+            const data = await response.json();
+            console.log('Response data:', data);
+
+            if (response.ok) {
+                localStorage.setItem('civicpulse_token', data.token);
+                localStorage.setItem('civicpulse_user', JSON.stringify({
+                    username: data.username,
+                    role: data.role
+                }));
+                showMessage('registerMessage', 'Registration successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/Dashboard.html';
+                }, 1000);
+            } else {
+                showMessage('registerMessage', data.error || 'Registration failed', 'error');
+            }
+        } catch (error) {
+            console.error('Error details:', error);
+            showMessage('registerMessage', 'Connection error: ' + error.message, 'error');
+        }
+    }
+
+    // Check if already logged in
+    window.addEventListener('load', function() {
+        if (localStorage.getItem('civicpulse_token')) {
+            window.location.href = '/Dashboard.html';
+        }
+    });
+</script>
 </body>
 </html>

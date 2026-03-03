@@ -25,7 +25,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll()) // Allow all for now (will restrict later)
                 .httpBasic(basic -> basic.disable()) // disable default login form
-                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable())); // allow H2 console in iframe
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable())); // allow H2 console
+                                                                                                   // in iframe
 
         return http.build();
     }

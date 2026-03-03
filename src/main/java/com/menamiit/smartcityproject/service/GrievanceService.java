@@ -2,6 +2,7 @@ package com.menamiit.smartcityproject.service;
 
 import com.menamiit.smartcityproject.dto.GrievanceRequest;
 import com.menamiit.smartcityproject.dto.GrievanceResponse;
+import com.menamiit.smartcityproject.dto.AdminAssignRequest;
 import com.menamiit.smartcityproject.model.Grievance;
 import com.menamiit.smartcityproject.repository.GrievanceRepository;
 import com.menamiit.smartcityproject.security.JwtUtil;
@@ -80,6 +81,66 @@ public class GrievanceService {
     public List<GrievanceResponse> getAll() {
         return grievanceRepository.findAllByOrderBySubmittedAtDesc()
             .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    // ── Get grievances by status (Admin/Officer) ─────────────────────────────
+    public List<GrievanceResponse> getByStatus(String status) {
+        String normalized = status == null ? "" : status.toUpperCase();
+        return grievanceRepository.findByStatusOrderBySubmittedAtDesc(normalized)
+            .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    // ── Admin assigns grievance to officer ───────────────────────────────────
+    public GrievanceResponse adminAssign(AdminAssignRequest request, String token) {
+        String role = jwtUtil.getRoleFromToken(token);
+        if (!"ADMIN".equals(role)) {
+            throw new IllegalArgumentException("Access denied.");
+        }
+
+        if (request.getGrievanceId() == null || request.getAssignedOfficer() == null) {
+            throw new IllegalArgumentException("grievanceId and assignedOfficer are required.");
+        }
+
+        Grievance g = grievanceRepository.findById(request.getGrievanceId())
+            .orElseThrow(() -> new IllegalArgumentException("Grievance not found."));
+
+        g.setAssignedOfficer(request.getAssignedOfficer());
+        if (request.getStatus() != null) {
+            g.setStatus(request.getStatus().toUpperCase());
+        }
+        if (request.getRemarks() != null) {
+            g.setRemarks(request.getRemarks());
+        }
+        if (request.getDeadline() != null) {
+            g.setUpdatedAt(request.getDeadline());
+        } else {
+            g.setUpdatedAt(LocalDateTime.now());
+        }
+
+        grievanceRepository.save(g);
+        return toResponse(g);
+    }
+
+    // ── Update grievance status (Admin/Officer) ─────────────────────────────-
+    public GrievanceResponse updateStatus(Long id, String status, String remarks, String token) {
+        String role = jwtUtil.getRoleFromToken(token);
+        if (!"ADMIN".equals(role) && !"OFFICER".equals(role)) {
+            throw new IllegalArgumentException("Access denied.");
+        }
+
+        Grievance g = grievanceRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Grievance not found."));
+
+        if (status != null) {
+            g.setStatus(status.toUpperCase());
+        }
+        if (remarks != null) {
+            g.setRemarks(remarks);
+        }
+        g.setUpdatedAt(LocalDateTime.now());
+
+        grievanceRepository.save(g);
+        return toResponse(g);
     }
  
     // ── Map entity to response ────────────────────────────────────────────────

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CivicPulse – Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #0d1117; --ink-soft: #4b5563; --surface: #f3f5f9; --panel: #ffffff;
+      --accent: #1a56db; --accent-light: #e8effd;
+      --citizen: #0ea5e9; --citizen-bg: #f0f9ff;
+      --admin: #8b5cf6;   --admin-bg: #f5f3ff;
+      --officer: #10b981; --officer-bg: #ecfdf5;
+      --border: #e5e8f0;
+      --sidebar-w: 260px;
+    }
+
+    /* citizen theme */
+    body.role-citizen { --role-color: var(--citizen); --role-bg: var(--citizen-bg); --role-accent: #075985; }
+    /* admin theme */
+    body.role-admin   { --role-color: var(--admin);   --role-bg: var(--admin-bg);   --role-accent: #4c1d95; }
+    /* officer theme */
+    body.role-officer { --role-color: var(--officer); --role-bg: var(--officer-bg); --role-accent: #064e3b; }
+
+    html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); }
+
+    /* ── LAYOUT ─────────────────────────────────────────────── */
+    .app { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
+
+    /* ── SIDEBAR ────────────────────────────────────────────── */
+    .sidebar {
+      background: var(--ink);
+      display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0;
+      width: var(--sidebar-w); height: 100vh;
+      overflow-y: auto; z-index: 100;
+      transition: transform 0.3s;
+    }
+
+    .sidebar-logo {
+      padding: 24px 20px 20px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .logo-icon-sm {
+      width: 34px; height: 34px; background: var(--accent); border-radius: 9px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .logo-icon-sm svg { width: 18px; height: 18px; fill: white; }
+
+    .logo-text-sm { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: white; }
+
+    /* Role badge in sidebar */
+    .sidebar-role {
+      margin: 16px 16px 8px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .role-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--role-color); flex-shrink: 0; }
+    
+    .role-name-display { font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 0.06em; }
+    .role-username { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-top: 1px; }
+
+    /* Nav sections */
+    .nav-section { padding: 20px 12px 8px; }
+    .nav-section-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.3); padding: 0 8px; margin-bottom: 6px; }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      color: rgba(255,255,255,0.55);
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+      margin-bottom: 2px;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+    .nav-item.active { background: var(--role-color); color: white; }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .nav-badge {
+      margin-left: auto; background: rgba(255,255,255,0.15);
+      border-radius: 20px; padding: 1px 8px; font-size: 0.7rem; font-weight: 600; color: white;
+    }
+
+    .sidebar-footer {
+      margin-top: auto; padding: 16px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .logout-btn {
+      width: 100%; padding: 10px; background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.2); border-radius: 10px;
+      color: #f87171; font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+      font-weight: 500; cursor: pointer; transition: background 0.15s;
+    }
+    .logout-btn:hover { background: rgba(239,68,68,0.22); }
+
+    /* ── MAIN ───────────────────────────────────────────────── */
+    .main { margin-left: var(--sidebar-w); padding: 0; min-height: 100vh; }
+
+    /* Topbar */
+    .topbar {
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+
+    .topbar-left h1 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.25rem; color: var(--ink); }
+    .topbar-left p  { font-size: 0.82rem; color: var(--ink-soft); margin-top: 1px; }
+
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+
+    .avatar {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: var(--role-color); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.9rem;
+    }
+
+    /* ── CONTENT ────────────────────────────────────────────── */
+    .content { padding: 32px; }
+
+    /* Welcome banner */
+    .welcome-banner {
+      background: var(--role-color);
+      border-radius: 20px;
+      padding: 28px 32px;
+      color: white;
+      margin-bottom: 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      overflow: hidden; position: relative;
+    }
+    .welcome-banner::after {
+      content: ''; position: absolute; right: -30px; top: -40px;
+      width: 200px; height: 200px;
+      background: rgba(255,255,255,0.08); border-radius: 50%;
+    }
+    .welcome-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; margin-bottom: 6px; }
+    .welcome-sub   { font-size: 0.88rem; opacity: 0.8; }
+    .welcome-emoji { font-size: 3.5rem; position: relative; z-index: 1; }
+
+    /* Stats grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+
+    .stat-card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px 22px;
+      transition: box-shadow 0.2s;
+    }
+    .stat-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+    .stat-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .stat-card-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .stat-card-trend { font-size: 0.75rem; color: #10b981; font-weight: 600; }
+    .stat-card-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.8rem; color: var(--ink); }
+    .stat-card-label { font-size: 0.8rem; color: var(--ink-soft); margin-top: 2px; }
+
+    /* Content grid */
+    .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .card-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+    .card-action { font-size: 0.8rem; color: var(--accent); cursor: pointer; font-weight: 500; }
+
+    /* Grievance list */
+    .grievance-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .grievance-item:last-child { border-bottom: none; }
+    .g-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+    .g-info { flex: 1; min-width: 0; }
+    .g-title { font-weight: 600; font-size: 0.88rem; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .g-meta  { font-size: 0.75rem; color: var(--ink-soft); margin-top: 2px; }
+    .g-badge { padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; flex-shrink: 0; }
+    .badge-pending  { background: #fef3c7; color: #92400e; }
+    .badge-progress { background: #dbeafe; color: #1e40af; }
+    .badge-resolved { background: #d1fae5; color: #065f46; }
+    .badge-closed   { background: #f3f4f6; color: #374151; }
+
+    /* Quick actions */
+    .quick-actions { display: flex; flex-direction: column; gap: 10px; }
+    .action-btn {
+      width: 100%; padding: 13px 16px;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      background: transparent; cursor: pointer; text-align: left;
+      display: flex; align-items: center; gap: 12px;
+      transition: background 0.15s, border-color 0.15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .action-btn:hover { background: var(--role-bg); border-color: var(--role-color); }
+    .action-btn-icon { font-size: 1.3rem; }
+    
+    .action-btn-title { font-weight: 600; font-size: 0.88rem; color: var(--ink); display: block; }
+    .action-btn-sub   { font-size: 0.75rem; color: var(--ink-soft); margin-top: 1px; display: block; }
+
+    /* Panels controlled by JS */
+    .dashboard-panel { display: none; }
+    .dashboard-panel.active { display: block; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--ink); color: white;
+      padding: 12px 20px; border-radius: 12px;
+      font-size: 0.88rem; font-weight: 500;
+      transform: translateY(80px); opacity: 0;
+      transition: all 0.3s cubic-bezier(0.22,1,0.36,1);
+      z-index: 999;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    @media (max-width: 900px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .content-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { transform: translateX(-100%); }
+      .main { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── SIDEBAR ───────────────────────────────────────────── -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon-sm">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      </div>
+      <span class="logo-text-sm">CivicPulse</span>
+    </div>
+
+    <div class="sidebar-role">
+      <div class="role-dot"></div>
+      <div class="role-info">
+        <div class="role-name-display" id="sidebarRole">Loading…</div>
+        <div class="role-username" id="sidebarUsername">@user</div>
+      </div>
+    </div>
+
+    <div id="navItems"></div>
+
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">⬡ Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ─────────────────────────────────────────────── -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1 id="topbarTitle">Dashboard</h1>
+        <p id="topbarDate"></p>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" id="userAvatar">?</div>
+      </div>
+    </div>
+
+    <div class="content" id="dashboardContent">
+      <!-- injected by JS -->
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+//  BOOTSTRAP
+// ─────────────────────────────────────────────────────────────
+const token = localStorage.getItem('civicpulse_token');
+const userStr = localStorage.getItem('civicpulse_user');
+
+if (!token || !userStr) {
+  window.location.href = '/index.html';
+}
+
+const user = JSON.parse(userStr);
+const role = user.role; // CITIZEN | ADMIN | OFFICER
+
+// Apply role theme
+document.body.classList.add('role-' + role.toLowerCase());
+
+// Set user info
+document.getElementById('sidebarRole').textContent    = role;
+document.getElementById('sidebarUsername').textContent = '@' + user.username;
+document.getElementById('userAvatar').textContent     = user.username[0].toUpperCase();
+
+// Date
+const now = new Date();
+document.getElementById('topbarDate').textContent =
+  now.toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+// ─────────────────────────────────────────────────────────────
+//  NAV CONFIG (per role)
+// ─────────────────────────────────────────────────────────────
+const NAV = {
+  CITIZEN: [
+    { section: 'Main', items: [
+      { id: 'overview', label: 'Overview',        icon: homeIcon(),    badge: null },
+      { id: 'submit',   label: 'Submit Grievance', icon: plusIcon(),    badge: null },
+      { id: 'myissues', label: 'My Grievances',   icon: listIcon(),    badge: '3'  },
+    ]},
+    { section: 'Account', items: [
+      { id: 'profile',  label: 'My Profile',      icon: userIcon(),    badge: null },
+      { id: 'notifications', label: 'Notifications', icon: bellIcon(), badge: '2'  },
+    ]},
+  ],
+  ADMIN: [
+    { section: 'Management', items: [
+      { id: 'overview',  label: 'Dashboard',       icon: homeIcon(),   badge: null },
+      { id: 'allissues', label: 'All Grievances',  icon: listIcon(),   badge: '12' },
+      { id: 'assign',    label: 'Assign Officers', icon: assignIcon(), badge: null },
+      { id: 'users',     label: 'Manage Users',    icon: usersIcon(),  badge: null },
+    ]},
+    { section: 'Analytics', items: [
+      { id: 'reports',  label: 'SLA Reports',     icon: chartIcon(),  badge: null },
+      { id: 'settings', label: 'System Settings', icon: gearIcon(),   badge: null },
+    ]},
+  ],
+  OFFICER: [
+    { section: 'Work', items: [
+      { id: 'overview',   label: 'Overview',       icon: homeIcon(),   badge: null },
+      { id: 'assigned',   label: 'Assigned Tasks', icon: listIcon(),   badge: '5'  },
+      { id: 'inprogress', label: 'In Progress',    icon: wrenchIcon(), badge: '2'  },
+      { id: 'completed',  label: 'Completed',      icon: checkIcon(),  badge: null },
+    ]},
+    { section: 'Info', items: [
+      { id: 'profile',  label: 'My Profile',      icon: userIcon(),   badge: null },
+    ]},
+  ],
+};
+
+// ─────────────────────────────────────────────────────────────
+//  BUILD SIDEBAR NAV
+// ─────────────────────────────────────────────────────────────
+let activeNav = 'overview';
+
+function buildNav() {
+  const container = document.getElementById('navItems');
+  const sections  = NAV[role] || NAV['CITIZEN'];
+  let html = '';
+  for (const sec of sections) {
+    html += `<div class="nav-section">
+      <div class="nav-section-label">${sec.section}</div>`;
+    for (const item of sec.items) {
+      html += `<a class="nav-item ${item.id === activeNav ? 'active' : ''}"
+                  onclick="navigateTo('${item.id}')" href="#">
+        ${item.icon}
+        ${item.label}
+        ${item.badge ? `<span class="nav-badge">${item.badge}</span>` : ''}
+      </a>`;
+    }
+    html += '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function navigateTo(panelId) {
+  if (panelId === 'submit')    { window.location.href = '/submit.html';       return; }
+  if (panelId === 'myissues')  { window.location.href = '/mygrievances.html'; return; }
+  activeNav = panelId;
+  buildNav();
+  renderContent(panelId);
+  document.getElementById('topbarTitle').textContent = getLabelForId(panelId);
+}
+
+function getLabelForId(id) {
+  const all = (NAV[role]||[]).flatMap(s=>s.items);
+  return all.find(i=>i.id===id)?.label || 'Dashboard';
+}
+
+// ─────────────────────────────────────────────────────────────
+//  CONTENT PANELS
+// ─────────────────────────────────────────────────────────────
+function renderContent(panelId) {
+  const el = document.getElementById('dashboardContent');
+  if (panelId === 'overview') {
+    el.innerHTML = renderOverview();
+  } else {
+    el.innerHTML = `<div class="card" style="text-align:center;padding:60px 32px;">
+      <div style="font-size:3rem;margin-bottom:16px">🚧</div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem;color:var(--ink);margin-bottom:8px">
+        ${getLabelForId(panelId)} — Coming Soon
+      </div>
+      <p style="color:var(--ink-soft);font-size:0.9rem;">This panel will be built in the next module.</p>
+    </div>`;
+  }
+}
+
+function renderOverview() {
+  const configs = {
+    CITIZEN: {
+      welcomeMsg: 'Good to see you,',
+      welcomeSub: 'Track your grievances and report new issues from here.',
+      emoji: '🏘️',
+      stats: [
+        { num: '3',  label: 'Open Issues',     icon: '📋', bg: '#fef3c7', trend: '+1 today' },
+        { num: '1',  label: 'In Progress',      icon: '⚙️', bg: '#dbeafe', trend: 'Active' },
+        { num: '7',  label: 'Resolved',         icon: '✅', bg: '#d1fae5', trend: 'All time' },
+        { num: '2',  label: 'Notifications',    icon: '🔔', bg: '#ede9fe', trend: 'Unread' },
+      ],
+      actions: [
+        { icon: '📝', title: 'File New Grievance', sub: 'Report a civic issue in your area',     id: 'submit' },
+        { icon: '📍', title: 'Track Status',       sub: 'View status of your submitted issues',  id: 'myissues' },
+        { icon: '👤', title: 'Edit Profile',        sub: 'Update your contact information',       id: 'profile' },
+      ],
+      grievances: [
+        { icon: '💧', bg: '#dbeafe', title: 'Water supply interrupted – Block C',  meta: 'Submitted 2 days ago',  badge: 'badge-progress', status: 'In Progress' },
+        { icon: '💡', bg: '#fef3c7', title: 'Street light not working – MG Road',  meta: 'Submitted 5 days ago',  badge: 'badge-pending',  status: 'Pending' },
+        { icon: '🛣️', bg: '#fee2e2', title: 'Pothole near school entrance',         meta: 'Submitted 8 days ago',  badge: 'badge-resolved', status: 'Resolved' },
+      ],
+    },
+    ADMIN: {
+      welcomeMsg: 'Hello, Administrator',
+      welcomeSub: 'Manage grievances, assign officers, and monitor SLA compliance.',
+      emoji: '🛡️',
+      stats: [
+        { num: '42',  label: 'Total Grievances', icon: '📊', bg: '#fef3c7', trend: '+8 this week' },
+        { num: '12',  label: 'Pending Review',   icon: '⏳', bg: '#fee2e2', trend: '3 urgent' },
+        { num: '18',  label: 'In Progress',       icon: '⚙️', bg: '#dbeafe', trend: 'Active' },
+        { num: '8',   label: 'Officers Active',   icon: '👷', bg: '#d1fae5', trend: 'On duty' },
+      ],
+      actions: [
+        { icon: '📋', title: 'Review All Grievances', sub: 'See all pending and open issues',     id: 'allissues' },
+        { icon: '👷', title: 'Assign Officers',        sub: 'Route issues to department officers', id: 'assign' },
+        { icon: '📈', title: 'SLA Report',             sub: 'Check compliance & performance',      id: 'reports' },
+      ],
+      grievances: [
+        { icon: '🗑️', bg: '#fef3c7', title: 'Garbage not collected – Ward 12',      meta: 'Citizen: rahul_k • 1 hr ago',    badge: 'badge-pending',  status: 'Pending' },
+        { icon: '💧', bg: '#dbeafe', title: 'Water pipe burst – Nehru Street',      meta: 'Citizen: priya_m • 3 hrs ago',   badge: 'badge-progress', status: 'In Progress' },
+        { icon: '🌳', bg: '#d1fae5', title: 'Fallen tree blocking road – Park Ave', meta: 'Citizen: suresh_v • 1 day ago',  badge: 'badge-resolved', status: 'Resolved' },
+      ],
+    },
+    OFFICER: {
+      welcomeMsg: 'Ready to serve,',
+      welcomeSub: 'View your assigned tasks and update resolution status.',
+      emoji: '👷',
+      stats: [
+        { num: '5',  label: 'Assigned Tasks',  icon: '📋', bg: '#fef3c7', trend: '2 new' },
+        { num: '2',  label: 'In Progress',      icon: '⚙️', bg: '#dbeafe', trend: 'Active' },
+        { num: '14', label: 'Completed',        icon: '✅', bg: '#d1fae5', trend: 'This month' },
+        { num: '96', label: 'SLA Score %',      icon: '🏆', bg: '#ede9fe', trend: 'Excellent' },
+      ],
+      actions: [
+        { icon: '📋', title: 'View Assigned Tasks',  sub: 'See all issues assigned to you', id: 'assigned' },
+        { icon: '🔧', title: 'Update Issue Status',  sub: 'Mark tasks as resolved',         id: 'inprogress' },
+        { icon: '✅', title: 'Completion History',   sub: 'View your resolved issues',      id: 'completed' },
+      ],
+      grievances: [
+        { icon: '💡', bg: '#fef3c7', title: 'Street light repair – MG Road Jn.',     meta: 'Assigned by admin • Due today',   badge: 'badge-progress', status: 'In Progress' },
+        { icon: '💧', bg: '#dbeafe', title: 'Drain blockage – Patel Nagar',          meta: 'Assigned by admin • Due tomorrow', badge: 'badge-pending',  status: 'Pending' },
+        { icon: '🛣️', bg: '#fee2e2', title: 'Road repair – Industrial Zone Gate 3',  meta: 'Assigned by admin • 2 days left',  badge: 'badge-pending',  status: 'Pending' },
+      ],
+    },
+  };
+
+  const cfg = configs[role];
+
+  return `
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+      <div>
+        <div class="welcome-title">${cfg.welcomeMsg} ${user.username} 👋</div>
+        <div class="welcome-sub">${cfg.welcomeSub}</div>
+      </div>
+      <div class="welcome-emoji">${cfg.emoji}</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      ${cfg.stats.map(s => `
+        <div class="stat-card">
+          <div class="stat-card-header">
+            <div class="stat-card-icon" style="background:${s.bg}">${s.icon}</div>
+            <span class="stat-card-trend">${s.trend}</span>
+          </div>
+          <div class="stat-card-num">${s.num}</div>
+          <div class="stat-card-label">${s.label}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- Main content grid -->
+    <div class="content-grid">
+
+      <!-- Grievance list -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Recent ${role === 'CITIZEN' ? 'My Grievances' : 'Grievances'}</span>
+          <span class="card-action" onclick="window.location.href='/mygrievances.html'">View all →</span>
+        </div>
+        ${cfg.grievances.map(g => `
+          <div class="grievance-item">
+            <div class="g-icon" style="background:${g.bg}">${g.icon}</div>
+            <div class="g-info">
+              <div class="g-title">${g.title}</div>
+              <div class="g-meta">${g.meta}</div>
+            </div>
+            <span class="g-badge ${g.badge}">${g.status}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- Quick actions -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Quick Actions</span>
+        </div>
+        <div class="quick-actions">
+          ${cfg.actions.map(a => `
+            <button class="action-btn" onclick="navigateTo('${a.id}')">
+              <span class="action-btn-icon">${a.icon}</span>
+              <span class="action-btn-text">
+                <span class="action-btn-title">${a.title}</span>
+                <span class="action-btn-sub">${a.sub}</span>
+              </span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  TOAST
+// ─────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ─────────────────────────────────────────────────────────────
+//  LOGOUT
+// ─────────────────────────────────────────────────────────────
+function logout() {
+  localStorage.removeItem('civicpulse_token');
+  localStorage.removeItem('civicpulse_user');
+  window.location.href = '/index.html';
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SVG ICONS
+// ─────────────────────────────────────────────────────────────
+function homeIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`; }
+function plusIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>`; }
+function listIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>`; }
+function userIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`; }
+function bellIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>`; }
+function usersIcon()  { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>`; }
+function assignIcon() { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>`; }
+function chartIcon()  { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>`; }
+function gearIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`; }
+function wrenchIcon() { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 2.1L11 6.6l1.4 1.4 4.5-4.5-1.4-1.4zm-8.6 11.4c-.78.78-.78 2.05 0 2.83l.71.71c.78.78 2.05.78 2.83 0L21 6.6 17.4 3 6.9 13.5zm-5.8 5.3l1.4 1.4L5 17.7l-1.4-1.4 2.4-2.4L4.6 12.5 1.1 16c-.78.78-.78 2.05 0 2.83l4.06 4.06c.78.78 2.05.78 2.83 0l3.5-3.5-1.4-1.4-3.5 3.5-.7-.7 3.5-3.5L8 16.6l-6.9-6.9c-.78-.78-2.05-.78-2.83 0z"/></svg>`; }
+function checkIcon()  { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`; }
+
+// ─────────────────────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────────────────────
+buildNav();
+renderContent('overview');
+</script>
+</body>
+</html>

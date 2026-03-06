@@ -4,14 +4,18 @@ import com.menamiit.smartcityproject.dto.GrievanceRequest;
 import com.menamiit.smartcityproject.dto.GrievanceResponse;
 import com.menamiit.smartcityproject.dto.AdminAssignRequest;
 import com.menamiit.smartcityproject.model.Grievance;
+import com.menamiit.smartcityproject.model.User;
 import com.menamiit.smartcityproject.repository.GrievanceRepository;
+import com.menamiit.smartcityproject.repository.UserRepository;
 import com.menamiit.smartcityproject.security.JwtUtil;
- 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
- 
+
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
  
 @Service
@@ -20,7 +24,10 @@ public class GrievanceService {
  
     @Autowired
     private GrievanceRepository grievanceRepository;
- 
+
+    @Autowired
+    private UserRepository userRepository;
+
     @Autowired
     private JwtUtil jwtUtil;
  
@@ -143,6 +150,58 @@ public class GrievanceService {
         return toResponse(g);
     }
  
+    // ── Admin update status + notes ────────────────────────────────────────────
+    public GrievanceResponse adminUpdate(Long id, String status, String adminNotes, String token) {
+        String role = jwtUtil.getRoleFromToken(token);
+        if (!"ADMIN".equals(role))
+            throw new IllegalArgumentException("Access denied.");
+
+        Grievance g = grievanceRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Grievance not found."));
+
+        if (status != null && !status.isBlank())
+            g.setStatus(status.toUpperCase());
+        if (adminNotes != null)
+            g.setAdminNotes(adminNotes);
+        g.setUpdatedAt(LocalDateTime.now());
+
+        return toResponse(grievanceRepository.save(g));
+    }
+
+    // ── Admin assign department + priority ────────────────────────────────────
+    public GrievanceResponse adminAssignDeptPriority(Long id, String department, String priority, String token) {
+        String role = jwtUtil.getRoleFromToken(token);
+        if (!"ADMIN".equals(role))
+            throw new IllegalArgumentException("Access denied.");
+
+        Grievance g = grievanceRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Grievance not found."));
+
+        if (department != null && !department.isBlank())
+            g.setDepartment(department);
+        if (priority != null && !priority.isBlank())
+            g.setPriority(priority.toUpperCase());
+        g.setUpdatedAt(LocalDateTime.now());
+
+        return toResponse(grievanceRepository.save(g));
+    }
+
+    // ── Admin stats ───────────────────────────────────────────────────────────
+    public Map<String, Long> getStats(String token) {
+        String role = jwtUtil.getRoleFromToken(token);
+        if (!"ADMIN".equals(role))
+            throw new IllegalArgumentException("Access denied.");
+
+        List<Grievance> all = grievanceRepository.findAll();
+        Map<String, Long> stats = new HashMap<>();
+        stats.put("total",      (long) all.size());
+        stats.put("open",       all.stream().filter(g -> "OPEN".equals(g.getStatus()) || "PENDING".equals(g.getStatus())).count());
+        stats.put("inProgress", all.stream().filter(g -> "IN_PROGRESS".equals(g.getStatus())).count());
+        stats.put("resolved",   all.stream().filter(g -> "RESOLVED".equals(g.getStatus())).count());
+        stats.put("closed",     all.stream().filter(g -> "CLOSED".equals(g.getStatus())).count());
+        return stats;
+    }
+ 
     // ── Map entity to response ────────────────────────────────────────────────
     private GrievanceResponse toResponse(Grievance g) {
         return new GrievanceResponse(
@@ -150,7 +209,8 @@ public class GrievanceService {
             g.getCategory(), g.getStatus(), g.getLocation(),
             g.getImageBase64(), g.getCitizenUsername(),
             g.getSubmittedAt(), g.getUpdatedAt(),
-            g.getAssignedOfficer(), g.getRemarks()
+            g.getAssignedOfficer(), g.getRemarks(),
+            g.getAdminNotes(), g.getPriority(), g.getDepartment()
         );
     }
 }

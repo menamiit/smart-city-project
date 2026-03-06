@@ -28,7 +28,7 @@
     html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); }
 
     /* ── LAYOUT ─────────────────────────────────────────────── */
-    .app { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
+    .app { min-height: 100vh; width: 100%; }
 
     /* ── SIDEBAR ────────────────────────────────────────────── */
     .sidebar {
@@ -105,7 +105,12 @@
     .logout-btn:hover { background: rgba(239,68,68,0.22); }
 
     /* ── MAIN ───────────────────────────────────────────────── */
-    .main { margin-left: var(--sidebar-w); padding: 0; min-height: 100vh; }
+    .main {
+      margin-left: var(--sidebar-w);
+      width: calc(100% - var(--sidebar-w));
+      padding: 0;
+      min-height: 100vh;
+    }
 
     /* Topbar */
     .topbar {
@@ -128,7 +133,11 @@
     }
 
     /* ── CONTENT ────────────────────────────────────────────── */
-    .content { padding: 32px; }
+    .content {
+      padding: 32px;
+      width: 100%;
+      max-width: 1200px;
+    }
 
     /* Welcome banner */
     .welcome-banner {
@@ -139,7 +148,9 @@
       margin-bottom: 28px;
       display: flex; align-items: center; justify-content: space-between;
       overflow: hidden; position: relative;
+      gap: 16px;
     }
+    .welcome-banner > div:first-child { flex: 1; min-width: 0; }
     .welcome-banner::after {
       content: ''; position: absolute; right: -30px; top: -40px;
       width: 200px; height: 200px;
@@ -225,9 +236,11 @@
       .content-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 640px) {
-      .app { grid-template-columns: 1fr; }
       .sidebar { transform: translateX(-100%); }
-      .main { margin-left: 0; }
+      .main { margin-left: 0; width: 100%; }
+      .content { padding: 20px; }
+      .welcome-banner { padding: 20px; }
+      .welcome-emoji { font-size: 2.4rem; }
     }
   </style>
 </head>
@@ -351,6 +364,11 @@ const NAV = {
 //  BUILD SIDEBAR NAV
 // ─────────────────────────────────────────────────────────────
 let activeNav = 'overview';
+let dashboardData = {
+  grievances: [],
+  loading: true,
+  error: null,
+};
 
 function buildNav() {
   const container = document.getElementById('navItems');
@@ -364,12 +382,20 @@ function buildNav() {
                   onclick="navigateTo('${item.id}')" href="#">
         ${item.icon}
         ${item.label}
-        ${item.badge ? `<span class="nav-badge">${item.badge}</span>` : ''}
+        ${(getDynamicNavBadge(item.id) ?? item.badge) ? `<span class="nav-badge">${getDynamicNavBadge(item.id) ?? item.badge}</span>` : ''}
       </a>`;
     }
     html += '</div>';
   }
   container.innerHTML = html;
+}
+
+function getDynamicNavBadge(itemId) {
+  const list = dashboardData.grievances || [];
+  if (itemId === 'myissues') return list.length || null;
+  if (itemId === 'allissues') return list.length || null;
+  if (itemId === 'assigned') return list.filter(g => g.status === 'PENDING' || g.status === 'IN_PROGRESS').length || null;
+  return null;
 }
 
 function navigateTo(panelId) {
@@ -405,73 +431,67 @@ function renderContent(panelId) {
 }
 
 function renderOverview() {
-  const configs = {
+  const list = dashboardData.grievances || [];
+
+  if (dashboardData.loading) {
+    return `<div class="card" style="text-align:center;padding:48px 32px;color:var(--ink-soft)">Loading dashboard data…</div>`;
+  }
+
+  if (dashboardData.error) {
+    return `<div class="card" style="text-align:center;padding:48px 32px;color:#b91c1c">${dashboardData.error}</div>`;
+  }
+
+  const roleConfig = {
     CITIZEN: {
       welcomeMsg: 'Good to see you,',
       welcomeSub: 'Track your grievances and report new issues from here.',
       emoji: '🏘️',
-      stats: [
-        { num: '3',  label: 'Open Issues',     icon: '📋', bg: '#fef3c7', trend: '+1 today' },
-        { num: '1',  label: 'In Progress',      icon: '⚙️', bg: '#dbeafe', trend: 'Active' },
-        { num: '7',  label: 'Resolved',         icon: '✅', bg: '#d1fae5', trend: 'All time' },
-        { num: '2',  label: 'Notifications',    icon: '🔔', bg: '#ede9fe', trend: 'Unread' },
-      ],
       actions: [
-        { icon: '📝', title: 'File New Grievance', sub: 'Report a civic issue in your area',     id: 'submit' },
-        { icon: '📍', title: 'Track Status',       sub: 'View status of your submitted issues',  id: 'myissues' },
-        { icon: '👤', title: 'Edit Profile',        sub: 'Update your contact information',       id: 'profile' },
-      ],
-      grievances: [
-        { icon: '💧', bg: '#dbeafe', title: 'Water supply interrupted – Block C',  meta: 'Submitted 2 days ago',  badge: 'badge-progress', status: 'In Progress' },
-        { icon: '💡', bg: '#fef3c7', title: 'Street light not working – MG Road',  meta: 'Submitted 5 days ago',  badge: 'badge-pending',  status: 'Pending' },
-        { icon: '🛣️', bg: '#fee2e2', title: 'Pothole near school entrance',         meta: 'Submitted 8 days ago',  badge: 'badge-resolved', status: 'Resolved' },
+        { icon: '📝', title: 'File New Grievance', sub: 'Report a civic issue in your area', id: 'submit' },
+        { icon: '📍', title: 'Track Status', sub: 'View status of your submitted issues', id: 'myissues' },
       ],
     },
     ADMIN: {
       welcomeMsg: 'Hello, Administrator',
-      welcomeSub: 'Manage grievances, assign officers, and monitor SLA compliance.',
+      welcomeSub: 'Manage grievances, assign officers, and monitor status updates.',
       emoji: '🛡️',
-      stats: [
-        { num: '42',  label: 'Total Grievances', icon: '📊', bg: '#fef3c7', trend: '+8 this week' },
-        { num: '12',  label: 'Pending Review',   icon: '⏳', bg: '#fee2e2', trend: '3 urgent' },
-        { num: '18',  label: 'In Progress',       icon: '⚙️', bg: '#dbeafe', trend: 'Active' },
-        { num: '8',   label: 'Officers Active',   icon: '👷', bg: '#d1fae5', trend: 'On duty' },
-      ],
       actions: [
-        { icon: '📋', title: 'Review All Grievances', sub: 'See all pending and open issues',     id: 'allissues' },
-        { icon: '👷', title: 'Assign Officers',        sub: 'Route issues to department officers', id: 'assign' },
-        { icon: '📈', title: 'SLA Report',             sub: 'Check compliance & performance',      id: 'reports' },
-      ],
-      grievances: [
-        { icon: '🗑️', bg: '#fef3c7', title: 'Garbage not collected – Ward 12',      meta: 'Citizen: rahul_k • 1 hr ago',    badge: 'badge-pending',  status: 'Pending' },
-        { icon: '💧', bg: '#dbeafe', title: 'Water pipe burst – Nehru Street',      meta: 'Citizen: priya_m • 3 hrs ago',   badge: 'badge-progress', status: 'In Progress' },
-        { icon: '🌳', bg: '#d1fae5', title: 'Fallen tree blocking road – Park Ave', meta: 'Citizen: suresh_v • 1 day ago',  badge: 'badge-resolved', status: 'Resolved' },
+        { icon: '📋', title: 'Review All Grievances', sub: 'See all pending and open issues', id: 'allissues' },
+        { icon: '👷', title: 'Assign Officers', sub: 'Route issues to department officers', id: 'assign' },
       ],
     },
     OFFICER: {
       welcomeMsg: 'Ready to serve,',
-      welcomeSub: 'View your assigned tasks and update resolution status.',
+      welcomeSub: 'View assigned tasks and update grievance statuses.',
       emoji: '👷',
-      stats: [
-        { num: '5',  label: 'Assigned Tasks',  icon: '📋', bg: '#fef3c7', trend: '2 new' },
-        { num: '2',  label: 'In Progress',      icon: '⚙️', bg: '#dbeafe', trend: 'Active' },
-        { num: '14', label: 'Completed',        icon: '✅', bg: '#d1fae5', trend: 'This month' },
-        { num: '96', label: 'SLA Score %',      icon: '🏆', bg: '#ede9fe', trend: 'Excellent' },
-      ],
       actions: [
-        { icon: '📋', title: 'View Assigned Tasks',  sub: 'See all issues assigned to you', id: 'assigned' },
-        { icon: '🔧', title: 'Update Issue Status',  sub: 'Mark tasks as resolved',         id: 'inprogress' },
-        { icon: '✅', title: 'Completion History',   sub: 'View your resolved issues',      id: 'completed' },
-      ],
-      grievances: [
-        { icon: '💡', bg: '#fef3c7', title: 'Street light repair – MG Road Jn.',     meta: 'Assigned by admin • Due today',   badge: 'badge-progress', status: 'In Progress' },
-        { icon: '💧', bg: '#dbeafe', title: 'Drain blockage – Patel Nagar',          meta: 'Assigned by admin • Due tomorrow', badge: 'badge-pending',  status: 'Pending' },
-        { icon: '🛣️', bg: '#fee2e2', title: 'Road repair – Industrial Zone Gate 3',  meta: 'Assigned by admin • 2 days left',  badge: 'badge-pending',  status: 'Pending' },
+        { icon: '📋', title: 'View Assigned Tasks', sub: 'See all issues assigned to you', id: 'assigned' },
+        { icon: '🔧', title: 'Update Issue Status', sub: 'Mark tasks as resolved', id: 'inprogress' },
       ],
     },
   };
 
-  const cfg = configs[role];
+  const cfg = roleConfig[role] || roleConfig.CITIZEN;
+
+  const pendingCount = list.filter(g => g.status === 'PENDING').length;
+  const progressCount = list.filter(g => g.status === 'IN_PROGRESS').length;
+  const resolvedCount = list.filter(g => g.status === 'RESOLVED').length;
+  const closedCount = list.filter(g => g.status === 'CLOSED').length;
+  const recent = list.slice(0, 5).map(g => ({
+    title: g.title,
+    meta: `${g.category?.replace('_', ' ') || 'Other'} • ${formatRelativeDate(g.submittedAt)}`,
+    badge: toBadgeClass(g.status),
+    status: (g.status || '').replace('_', ' '),
+    icon: categoryIcon(g.category),
+    bg: categoryBg(g.category),
+  }));
+
+  const stats = [
+    { num: String(list.length), label: 'Total Grievances', icon: '📋', bg: '#fef3c7', trend: 'All time' },
+    { num: String(pendingCount), label: 'Pending', icon: '⏳', bg: '#fee2e2', trend: 'Needs action' },
+    { num: String(progressCount), label: 'In Progress', icon: '⚙️', bg: '#dbeafe', trend: 'Active' },
+    { num: String(resolvedCount + closedCount), label: 'Resolved/Closed', icon: '✅', bg: '#d1fae5', trend: 'Completed' },
+  ];
 
   return `
     <!-- Welcome Banner -->
@@ -485,7 +505,7 @@ function renderOverview() {
 
     <!-- Stats -->
     <div class="stats-grid">
-      ${cfg.stats.map(s => `
+      ${stats.map(s => `
         <div class="stat-card">
           <div class="stat-card-header">
             <div class="stat-card-icon" style="background:${s.bg}">${s.icon}</div>
@@ -506,7 +526,7 @@ function renderOverview() {
           <span class="card-title">Recent ${role === 'CITIZEN' ? 'My Grievances' : 'Grievances'}</span>
           <span class="card-action" onclick="window.location.href='/mygrievances.html'">View all →</span>
         </div>
-        ${cfg.grievances.map(g => `
+        ${recent.length ? recent.map(g => `
           <div class="grievance-item">
             <div class="g-icon" style="background:${g.bg}">${g.icon}</div>
             <div class="g-info">
@@ -515,7 +535,7 @@ function renderOverview() {
             </div>
             <span class="g-badge ${g.badge}">${g.status}</span>
           </div>
-        `).join('')}
+        `).join('') : `<div class="g-meta" style="padding:8px 0">No grievances found yet.</div>`}
       </div>
 
       <!-- Quick actions -->
@@ -538,6 +558,66 @@ function renderOverview() {
 
     </div>
   `;
+}
+
+function toBadgeClass(status) {
+  const map = {
+    PENDING: 'badge-pending',
+    IN_PROGRESS: 'badge-progress',
+    RESOLVED: 'badge-resolved',
+    CLOSED: 'badge-closed',
+  };
+  return map[status] || 'badge-closed';
+}
+
+function categoryIcon(category) {
+  const map = {
+    WATER: '💧', STREET_LIGHT: '💡', ROAD: '🛣️', SANITATION: '🗑️',
+    DRAINAGE: '🌊', PARK: '🌳', ELECTRICITY: '⚡', OTHER: '📌'
+  };
+  return map[category] || '📌';
+}
+
+function categoryBg(category) {
+  const map = {
+    WATER: '#dbeafe', STREET_LIGHT: '#fef3c7', ROAD: '#fee2e2', SANITATION: '#fef3c7',
+    DRAINAGE: '#e0f2fe', PARK: '#d1fae5', ELECTRICITY: '#fef9c3', OTHER: '#f3f4f6'
+  };
+  return map[category] || '#f3f4f6';
+}
+
+function formatRelativeDate(input) {
+  if (!input) return 'Date unavailable';
+  const date = new Date(input);
+  const diffMs = Date.now() - date.getTime();
+  const day = 24 * 60 * 60 * 1000;
+  if (diffMs < day) return 'Today';
+  if (diffMs < day * 2) return '1 day ago';
+  if (diffMs < day * 30) return `${Math.floor(diffMs / day)} days ago`;
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+async function loadDashboardData() {
+  dashboardData.loading = true;
+  dashboardData.error = null;
+  renderContent('overview');
+
+  const endpoint = role === 'CITIZEN' ? '/api/grievances/my' : '/api/grievances/all';
+
+  try {
+    const res = await fetch(endpoint, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error('Could not load dashboard data.');
+    dashboardData.grievances = await res.json();
+  } catch (error) {
+    dashboardData.grievances = [];
+    dashboardData.error = 'Could not load dashboard data.';
+  } finally {
+    dashboardData.loading = false;
+    buildNav();
+    renderContent('overview');
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -578,7 +658,7 @@ function checkIcon()  { return `<svg viewBox="0 0 24 24" fill="currentColor"><pa
 //  INIT
 // ─────────────────────────────────────────────────────────────
 buildNav();
-renderContent('overview');
+loadDashboardData();
 </script>
 </body>
 </html>

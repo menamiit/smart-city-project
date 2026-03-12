@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CivicPulse – Admin Panel</title>
+  <title>CivicPulse – Manage Users</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
@@ -94,6 +94,22 @@
       .content { padding: 20px; }
     }
 
+    /* ── Page Header ── */
+    .page-header {
+      margin-bottom: 28px;
+    }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.6rem;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .page-header p {
+      color: #6b7280;
+      font-size: 0.92rem;
+    }
+
     /* ── Stats Cards ── */
     .stats-grid {
       display: grid;
@@ -123,11 +139,10 @@
       font-weight: 800;
       color: var(--ink);
     }
-    .stat-card.total  .stat-value { color: var(--admin); }
-    .stat-card.open   .stat-value { color: var(--info); }
-    .stat-card.prog   .stat-value { color: var(--warning); }
-    .stat-card.res    .stat-value { color: var(--success); }
-    .stat-card.closed .stat-value { color: #6b7280; }
+    .stat-card.total   .stat-value { color: var(--admin); }
+    .stat-card.citizen  .stat-value { color: var(--info); }
+    .stat-card.officer  .stat-value { color: var(--success); }
+    .stat-card.admin-c  .stat-value { color: var(--warning); }
 
     /* ── Toolbar ── */
     .toolbar {
@@ -220,34 +235,19 @@
       font-size: 0.92rem;
       vertical-align: middle;
     }
-    .td-title { font-weight: 600; max-width: 240px; }
-    .td-desc {
-      max-width: 200px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: #6b7280;
-      font-size: 0.85rem;
-    }
 
-    /* ── Status Badge ── */
-    .badge {
+    /* ── Role Badge ── */
+    .role-badge {
       display: inline-block;
-      padding: 4px 10px;
+      padding: 4px 12px;
       border-radius: 20px;
       font-size: 0.78rem;
       font-weight: 600;
       white-space: nowrap;
     }
-    .badge-OPEN       { background: #dbeafe; color: #1d4ed8; }
-    .badge-IN_PROGRESS{ background: #fef3c7; color: #92400e; }
-    .badge-RESOLVED   { background: #d1fae5; color: #065f46; }
-    .badge-CLOSED     { background: #f3f4f6; color: #374151; }
-
-    /* ── Priority Badge ── */
-    .priority-HIGH   { color: #ef4444; font-weight: 700; font-size: 0.8rem; }
-    .priority-MEDIUM { color: #f59e0b; font-weight: 700; font-size: 0.8rem; }
-    .priority-LOW    { color: #10b981; font-weight: 700; font-size: 0.8rem; }
+    .role-CITIZEN  { background: #dbeafe; color: #1d4ed8; }
+    .role-ADMIN    { background: #ede9fe; color: #7c3aed; }
+    .role-OFFICER  { background: #d1fae5; color: #065f46; }
 
     /* ── Action Buttons ── */
     .action-btn {
@@ -262,9 +262,8 @@
       margin-right: 4px;
     }
     .action-btn:hover { opacity: 0.8; }
-    .btn-view   { background: var(--admin-light); color: var(--admin); }
-    .btn-assign { background: #dbeafe; color: #1d4ed8; }
-    .btn-status { background: #d1fae5; color: #065f46; }
+    .btn-edit   { background: var(--admin-light); color: var(--admin); }
+    .btn-delete { background: #fee2e2; color: #dc2626; }
 
     /* ── Loader / Empty ── */
     .loader {
@@ -299,7 +298,7 @@
       border-radius: 16px;
       padding: 32px;
       width: 100%;
-      max-width: 560px;
+      max-width: 480px;
       max-height: 90vh;
       overflow-y: auto;
       position: relative;
@@ -375,6 +374,18 @@
     }
     .btn-save:hover { background: #6d28d9; }
     .btn-save:disabled { background: #c4b5fd; cursor: not-allowed; }
+    .btn-danger {
+      padding: 10px 20px;
+      background: var(--danger);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-danger:hover { background: #dc2626; }
 
     /* Toast */
     .toast {
@@ -425,7 +436,7 @@
   <div class="main">
     <div class="topbar">
       <div class="topbar-left">
-        <h1>All Grievances</h1>
+        <h1>Manage Users</h1>
         <p id="topbarDate"></p>
       </div>
       <div class="topbar-right">
@@ -434,150 +445,110 @@
     </div>
     <div class="content">
 
+    <div class="page-header">
+      <h1>👥 Manage Users</h1>
+      <p>View all registered users, change roles, and manage accounts.</p>
+    </div>
+
     <!-- Stats -->
     <div class="stats-grid">
       <div class="stat-card total">
-        <span class="stat-label">Total Grievances</span>
+        <span class="stat-label">Total Users</span>
         <span class="stat-value" id="statTotal">—</span>
       </div>
-      <div class="stat-card open">
-        <span class="stat-label">Open</span>
-        <span class="stat-value" id="statOpen">—</span>
+      <div class="stat-card citizen">
+        <span class="stat-label">Citizens</span>
+        <span class="stat-value" id="statCitizens">—</span>
       </div>
-      <div class="stat-card prog">
-        <span class="stat-label">In Progress</span>
-        <span class="stat-value" id="statProgress">—</span>
+      <div class="stat-card officer">
+        <span class="stat-label">Officers</span>
+        <span class="stat-value" id="statOfficers">—</span>
       </div>
-      <div class="stat-card res">
-        <span class="stat-label">Resolved</span>
-        <span class="stat-value" id="statResolved">—</span>
-      </div>
-      <div class="stat-card closed">
-        <span class="stat-label">Closed</span>
-        <span class="stat-value" id="statClosed">—</span>
+      <div class="stat-card admin-c">
+        <span class="stat-label">Admins</span>
+        <span class="stat-value" id="statAdmins">—</span>
       </div>
     </div>
 
     <!-- Toolbar -->
     <div class="toolbar">
-      <input type="text" id="searchInput" placeholder="🔍  Search by title or username…" oninput="applyFilters()"/>
-      <select id="statusFilter" onchange="applyFilters()">
-        <option value="">All Statuses</option>
-        <option value="OPEN">Open</option>
-        <option value="IN_PROGRESS">In Progress</option>
-        <option value="RESOLVED">Resolved</option>
-        <option value="CLOSED">Closed</option>
+      <input type="text" id="searchInput" placeholder="🔍  Search by username or email…" oninput="applyFilters()"/>
+      <select id="roleFilter" onchange="applyFilters()">
+        <option value="">All Roles</option>
+        <option value="CITIZEN">Citizen</option>
+        <option value="ADMIN">Admin</option>
+        <option value="OFFICER">Officer</option>
       </select>
-      <select id="deptFilter" onchange="applyFilters()">
-        <option value="">All Departments</option>
-        <option value="Roads">Roads</option>
-        <option value="Water Supply">Water Supply</option>
-        <option value="Electricity">Electricity</option>
-        <option value="Sanitation">Sanitation</option>
-        <option value="Public Safety">Public Safety</option>
-        <option value="Parks">Parks</option>
-        <option value="Other">Other</option>
-      </select>
-      <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+      <button class="refresh-btn" onclick="loadUsers()">↻ Refresh</button>
     </div>
 
     <!-- Table -->
     <div class="table-wrap">
       <div class="table-header">
-        <span class="table-title">All Grievances</span>
+        <span class="table-title">All Users</span>
         <span id="totalCount">Loading…</span>
       </div>
       <div id="tableBody">
-        <div class="loader"><div class="spinner"></div>Loading grievances…</div>
+        <div class="loader"><div class="spinner"></div>Loading users…</div>
       </div>
-    </div><!-- /table-wrap -->
+    </div>
 
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
 
-  <!-- View Modal -->
-  <div class="modal-overlay" id="viewModal">
+  <!-- Edit Role Modal -->
+  <div class="modal-overlay" id="editModal">
     <div class="modal">
-      <button class="modal-close" onclick="closeModal('viewModal')">✕</button>
-      <div class="modal-title">Grievance Details</div>
-      <div class="field-group"><div class="field-label">ID</div><div class="field-value" id="vId">—</div></div>
-      <div class="field-group"><div class="field-label">Title</div><div class="field-value" id="vTitle">—</div></div>
-      <div class="field-group"><div class="field-label">Description</div><div class="field-value" id="vDesc">—</div></div>
-      <div class="field-group"><div class="field-label">Category</div><div class="field-value" id="vCategory">—</div></div>
-      <div class="field-group"><div class="field-label">Department</div><div class="field-value" id="vDept">—</div></div>
-      <div class="field-group"><div class="field-label">Priority</div><div class="field-value" id="vPriority">—</div></div>
-      <div class="field-group"><div class="field-label">Status</div><div class="field-value" id="vStatus">—</div></div>
-      <div class="field-group"><div class="field-label">Submitted By</div><div class="field-value" id="vUser">—</div></div>
-      <div class="field-group"><div class="field-label">Location</div><div class="field-value" id="vLocation">—</div></div>
-      <div class="field-group"><div class="field-label">Submitted On</div><div class="field-value" id="vCreated">—</div></div>
-      <div class="field-group"><div class="field-label">Admin Notes</div><div class="field-value" id="vNotes">—</div></div>
-    </div>
-  </div>
-
-  <!-- Update Modal (Status + Notes) -->
-  <div class="modal-overlay" id="updateModal">
-    <div class="modal">
-      <button class="modal-close" onclick="closeModal('updateModal')">✕</button>
-      <div class="modal-title">Update Grievance</div>
-      <input type="hidden" id="uId"/>
+      <button class="modal-close" onclick="closeModal('editModal')">✕</button>
+      <div class="modal-title">Change User Role</div>
+      <input type="hidden" id="editId"/>
       <div class="field-group">
-        <div class="field-label">Current Title</div>
-        <div class="field-value" id="uTitle">—</div>
+        <div class="field-label">Username</div>
+        <div class="field-value" id="editUsername">—</div>
       </div>
       <div class="field-group">
-        <div class="field-label">Status</div>
-        <select class="modal-select" id="uStatus">
-          <option value="OPEN">Open</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="RESOLVED">Resolved</option>
-          <option value="CLOSED">Closed</option>
+        <div class="field-label">Email</div>
+        <div class="field-value" id="editEmail">—</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Current Role</div>
+        <div class="field-value" id="editCurrentRole">—</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">New Role</div>
+        <select class="modal-select" id="editRole">
+          <option value="CITIZEN">Citizen</option>
+          <option value="OFFICER">Officer</option>
+          <option value="ADMIN">Admin</option>
         </select>
       </div>
-      <div class="field-group">
-        <div class="field-label">Admin Notes</div>
-        <textarea class="modal-select" id="uNotes" rows="3" placeholder="Add notes for the citizen…" style="resize:vertical;"></textarea>
-      </div>
       <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal('updateModal')">Cancel</button>
-        <button class="btn-save" id="uSaveBtn" onclick="submitUpdate()">Save Changes</button>
+        <button class="btn-cancel" onclick="closeModal('editModal')">Cancel</button>
+        <button class="btn-save" id="editSaveBtn" onclick="submitRoleChange()">Save Changes</button>
       </div>
     </div>
   </div>
 
-  <!-- Assign Modal -->
-  <div class="modal-overlay" id="assignModal">
+  <!-- Delete Confirm Modal -->
+  <div class="modal-overlay" id="deleteModal">
     <div class="modal">
-      <button class="modal-close" onclick="closeModal('assignModal')">✕</button>
-      <div class="modal-title">Assign Department</div>
-      <input type="hidden" id="aId"/>
+      <button class="modal-close" onclick="closeModal('deleteModal')">✕</button>
+      <div class="modal-title" style="color: var(--danger);">Delete User</div>
+      <input type="hidden" id="deleteId"/>
+      <p style="margin-bottom: 12px;">Are you sure you want to delete this user?</p>
       <div class="field-group">
-        <div class="field-label">Grievance</div>
-        <div class="field-value" id="aTitle">—</div>
+        <div class="field-label">Username</div>
+        <div class="field-value" id="deleteUsername">—</div>
       </div>
       <div class="field-group">
-        <div class="field-label">Assign to Department</div>
-        <select class="modal-select" id="aDept">
-          <option value="Roads">Roads</option>
-          <option value="Water Supply">Water Supply</option>
-          <option value="Electricity">Electricity</option>
-          <option value="Sanitation">Sanitation</option>
-          <option value="Public Safety">Public Safety</option>
-          <option value="Parks">Parks</option>
-          <option value="Other">Other</option>
-        </select>
+        <div class="field-label">Role</div>
+        <div class="field-value" id="deleteRole">—</div>
       </div>
-      <div class="field-group">
-        <div class="field-label">Priority</div>
-        <select class="modal-select" id="aPriority">
-          <option value="LOW">Low</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="HIGH">High</option>
-        </select>
-      </div>
+      <p style="font-size:0.85rem;color:var(--danger);margin-top:8px;">⚠️ This action cannot be undone.</p>
       <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal('assignModal')">Cancel</button>
-        <button class="btn-save" id="aSaveBtn" onclick="submitAssign()">Assign</button>
+        <button class="btn-cancel" onclick="closeModal('deleteModal')">Cancel</button>
+        <button class="btn-danger" id="deleteSaveBtn" onclick="submitDelete()">Delete User</button>
       </div>
     </div>
   </div>
@@ -586,7 +557,6 @@
   <div class="toast" id="toast"></div>
 
 <script>
-  // ─── CONFIG ───────────────────────────────────────────────
   const API = '';
 
   // ─── AUTH GUARD ───────────────────────────────────────────
@@ -638,7 +608,7 @@
       { id: 'settings', label: 'System Settings', icon: gearIcon() },
     ]},
   ];
-  let activeNav = 'allissues';
+  let activeNav = 'users';
 
   function buildNav() {
     const container = document.getElementById('navItems');
@@ -663,7 +633,7 @@
   buildNav();
 
   // ─── STATE ────────────────────────────────────────────────
-  let allGrievances = [];
+  let allUsers = [];
 
   // ─── HEADERS ─────────────────────────────────────────────
   function authHeaders() {
@@ -681,32 +651,13 @@
     setTimeout(() => t.className = 'toast', 3000);
   }
 
-  // ─── LOAD STATS ──────────────────────────────────────────
-  async function loadStats() {
-    try {
-      const res = await fetch(`${API}/api/grievances/admin/stats`, {
-        headers: authHeaders()
-      });
-      if (!res.ok) throw new Error('Stats fetch failed');
-      const data = await res.json();
-      // Expected: { total, open, inProgress, resolved, closed }
-      document.getElementById('statTotal').textContent    = data.total    ?? '—';
-      document.getElementById('statOpen').textContent     = data.open     ?? '—';
-      document.getElementById('statProgress').textContent = data.inProgress ?? '—';
-      document.getElementById('statResolved').textContent = data.resolved  ?? '—';
-      document.getElementById('statClosed').textContent   = data.closed    ?? '—';
-    } catch (e) {
-      console.error('Stats error:', e);
-    }
-  }
-
-  // ─── LOAD ALL GRIEVANCES ──────────────────────────────────
-  async function loadAll() {
+  // ─── LOAD USERS ──────────────────────────────────────────
+  async function loadUsers() {
     document.getElementById('tableBody').innerHTML =
-      `<div class="loader"><div class="spinner"></div>Loading grievances…</div>`;
+      `<div class="loader"><div class="spinner"></div>Loading users…</div>`;
 
     try {
-      const res = await fetch(`${API}/api/grievances/admin/all`, {
+      const res = await fetch(`${API}/api/admin/users`, {
         headers: authHeaders()
       });
 
@@ -716,62 +667,65 @@
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-      allGrievances = await res.json();
+      allUsers = await res.json();
+      updateStats();
       applyFilters();
-      loadStats();
     } catch (e) {
       console.error('Load error:', e);
       document.getElementById('tableBody').innerHTML =
-        `<div class="empty">⚠️ Failed to load grievances. Check console.</div>`;
-      showToast('Failed to load grievances', 'error');
+        `<div class="empty">⚠️ Failed to load users. Check console.</div>`;
+      showToast('Failed to load users', 'error');
     }
+  }
+
+  // ─── UPDATE STATS ────────────────────────────────────────
+  function updateStats() {
+    document.getElementById('statTotal').textContent    = allUsers.length;
+    document.getElementById('statCitizens').textContent = allUsers.filter(u => u.role === 'CITIZEN').length;
+    document.getElementById('statOfficers').textContent = allUsers.filter(u => u.role === 'OFFICER').length;
+    document.getElementById('statAdmins').textContent   = allUsers.filter(u => u.role === 'ADMIN').length;
   }
 
   // ─── FILTER + RENDER ─────────────────────────────────────
   function applyFilters() {
     const search = document.getElementById('searchInput').value.toLowerCase();
-    const status = document.getElementById('statusFilter').value;
-    const dept   = document.getElementById('deptFilter').value;
+    const role   = document.getElementById('roleFilter').value;
 
-    let filtered = allGrievances.filter(g => {
+    let filtered = allUsers.filter(u => {
       const matchSearch = !search ||
-        g.title?.toLowerCase().includes(search) ||
-        g.username?.toLowerCase().includes(search);
-      const matchStatus = !status || g.status === status;
-      const matchDept   = !dept   || g.department === dept;
-      return matchSearch && matchStatus && matchDept;
+        u.username?.toLowerCase().includes(search) ||
+        u.email?.toLowerCase().includes(search);
+      const matchRole = !role || u.role === role;
+      return matchSearch && matchRole;
     });
 
     document.getElementById('totalCount').textContent =
-      `${filtered.length} of ${allGrievances.length} grievances`;
+      `${filtered.length} of ${allUsers.length} users`;
 
     renderTable(filtered);
   }
 
   // ─── RENDER TABLE ────────────────────────────────────────
-  function renderTable(grievances) {
+  function renderTable(users) {
     const wrap = document.getElementById('tableBody');
 
-    if (grievances.length === 0) {
-      wrap.innerHTML = `<div class="empty">No grievances found.</div>`;
+    if (users.length === 0) {
+      wrap.innerHTML = `<div class="empty">No users found.</div>`;
       return;
     }
 
-    let rows = grievances.map(g => `
+    let rows = users.map(u => `
       <tr>
-        <td><code style="font-size:0.78rem;color:#6b7280;">#${g.id}</code></td>
-        <td class="td-title">${escHtml(g.title ?? '—')}</td>
-        <td class="td-desc" title="${escHtml(g.description ?? '')}">${escHtml(g.description ?? '—')}</td>
-        <td>${escHtml(g.category ?? '—')}</td>
-        <td>${escHtml(g.department ?? '<span style="color:#9ca3af">Unassigned</span>')}</td>
-        <td><span class="priority-${g.priority ?? 'LOW'}">${g.priority ?? '—'}</span></td>
-        <td><span class="badge badge-${g.status}">${formatStatus(g.status)}</span></td>
-        <td style="font-size:0.85rem;color:#374151;">${escHtml(g.username ?? '—')}</td>
-        <td style="font-size:0.82rem;color:#6b7280;">${formatDate(g.createdAt)}</td>
+        <td><code style="font-size:0.78rem;color:#6b7280;">#${u.id}</code></td>
+        <td style="font-weight:600;">${escHtml(u.username)}</td>
+        <td style="color:#6b7280;font-size:0.88rem;">${escHtml(u.email ?? '—')}</td>
+        <td style="color:#6b7280;font-size:0.88rem;">${escHtml(u.phone ?? '—')}</td>
+        <td><span class="role-badge role-${u.role}">${u.role}</span></td>
         <td>
-          <button class="action-btn btn-view"   onclick="openView(${g.id})">View</button>
-          <button class="action-btn btn-assign" onclick="openAssign(${g.id})">Assign</button>
-          <button class="action-btn btn-status" onclick="openUpdate(${g.id})">Update</button>
+          <button class="action-btn btn-edit" onclick="openEdit(${u.id})">Change Role</button>
+          ${u.username !== currentUser.username ?
+            `<button class="action-btn btn-delete" onclick="openDelete(${u.id})">Delete</button>` :
+            `<span style="font-size:0.78rem;color:#9ca3af;">You</span>`}
         </td>
       </tr>
     `).join('');
@@ -781,14 +735,10 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Title</th>
-            <th>Description</th>
-            <th>Category</th>
-            <th>Department</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Submitted By</th>
-            <th>Date</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Role</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -796,122 +746,94 @@
       </table>`;
   }
 
-  // ─── VIEW MODAL ──────────────────────────────────────────
-  function openView(id) {
-    const g = allGrievances.find(x => x.id === id);
-    if (!g) return;
-    document.getElementById('vId').textContent       = g.id;
-    document.getElementById('vTitle').textContent    = g.title ?? '—';
-    document.getElementById('vDesc').textContent     = g.description ?? '—';
-    document.getElementById('vCategory').textContent = g.category ?? '—';
-    document.getElementById('vDept').textContent     = g.department ?? 'Unassigned';
-    document.getElementById('vPriority').textContent = g.priority ?? '—';
-    document.getElementById('vStatus').innerHTML     = `<span class="badge badge-${g.status}">${formatStatus(g.status)}</span>`;
-    document.getElementById('vUser').textContent     = g.username ?? '—';
-    document.getElementById('vLocation').textContent = g.location ?? '—';
-    document.getElementById('vCreated').textContent  = formatDate(g.createdAt);
-    document.getElementById('vNotes').textContent    = g.adminNotes ?? 'None';
-    openModal('viewModal');
+  // ─── EDIT ROLE MODAL ──────────────────────────────────────
+  function openEdit(id) {
+    const u = allUsers.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById('editId').value             = u.id;
+    document.getElementById('editUsername').textContent  = u.username;
+    document.getElementById('editEmail').textContent    = u.email ?? '—';
+    document.getElementById('editCurrentRole').innerHTML = `<span class="role-badge role-${u.role}">${u.role}</span>`;
+    document.getElementById('editRole').value            = u.role;
+    document.getElementById('editSaveBtn').disabled      = false;
+    openModal('editModal');
   }
 
-  // ─── UPDATE MODAL ────────────────────────────────────────
-  function openUpdate(id) {
-    const g = allGrievances.find(x => x.id === id);
-    if (!g) return;
-    document.getElementById('uId').value           = g.id;
-    document.getElementById('uTitle').textContent  = g.title ?? '—';
-    document.getElementById('uStatus').value       = g.status ?? 'OPEN';
-    document.getElementById('uNotes').value        = g.adminNotes ?? '';
-    document.getElementById('uSaveBtn').disabled   = false;
-    openModal('updateModal');
-  }
+  async function submitRoleChange() {
+    const id   = document.getElementById('editId').value;
+    const role = document.getElementById('editRole').value;
 
-  async function submitUpdate() {
-    const id     = document.getElementById('uId').value;
-    const status = document.getElementById('uStatus').value;
-    const notes  = document.getElementById('uNotes').value.trim();
-
-    document.getElementById('uSaveBtn').disabled = true;
-    document.getElementById('uSaveBtn').textContent = 'Saving…';
+    document.getElementById('editSaveBtn').disabled = true;
+    document.getElementById('editSaveBtn').textContent = 'Saving…';
 
     try {
-      // ENDPOINT: PUT /api/grievances/admin/{id}/update
-      const res = await fetch(`${API}/api/grievances/admin/${id}/update`, {
+      const res = await fetch(`${API}/api/admin/users/${id}/role`, {
         method: 'PUT',
         headers: authHeaders(),
-        body: JSON.stringify({ status, adminNotes: notes })
+        body: JSON.stringify({ role })
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message ?? `HTTP ${res.status}`);
+        throw new Error(err.error ?? `HTTP ${res.status}`);
       }
 
       const updated = await res.json();
+      const idx = allUsers.findIndex(u => u.id === parseInt(id));
+      if (idx !== -1) allUsers[idx] = updated;
 
-      // Merge into local state
-      const idx = allGrievances.findIndex(g => g.id === parseInt(id));
-      if (idx !== -1) allGrievances[idx] = updated;
-
-      closeModal('updateModal');
+      closeModal('editModal');
+      updateStats();
       applyFilters();
-      loadStats();
-      showToast('Grievance updated successfully!', 'success');
+      showToast(`Role updated to ${role}!`, 'success');
     } catch (e) {
       console.error('Update error:', e);
       showToast(`Update failed: ${e.message}`, 'error');
     } finally {
-      document.getElementById('uSaveBtn').disabled  = false;
-      document.getElementById('uSaveBtn').textContent = 'Save Changes';
+      document.getElementById('editSaveBtn').disabled  = false;
+      document.getElementById('editSaveBtn').textContent = 'Save Changes';
     }
   }
 
-  // ─── ASSIGN MODAL ────────────────────────────────────────
-  function openAssign(id) {
-    const g = allGrievances.find(x => x.id === id);
-    if (!g) return;
-    document.getElementById('aId').value           = g.id;
-    document.getElementById('aTitle').textContent  = g.title ?? '—';
-    document.getElementById('aDept').value         = g.department ?? 'Other';
-    document.getElementById('aPriority').value     = g.priority   ?? 'LOW';
-    document.getElementById('aSaveBtn').disabled   = false;
-    openModal('assignModal');
+  // ─── DELETE MODAL ─────────────────────────────────────────
+  function openDelete(id) {
+    const u = allUsers.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById('deleteId').value             = u.id;
+    document.getElementById('deleteUsername').textContent  = u.username;
+    document.getElementById('deleteRole').innerHTML        = `<span class="role-badge role-${u.role}">${u.role}</span>`;
+    document.getElementById('deleteSaveBtn').disabled      = false;
+    openModal('deleteModal');
   }
 
-  async function submitAssign() {
-    const id       = document.getElementById('aId').value;
-    const dept     = document.getElementById('aDept').value;
-    const priority = document.getElementById('aPriority').value;
+  async function submitDelete() {
+    const id = document.getElementById('deleteId').value;
 
-    document.getElementById('aSaveBtn').disabled = true;
-    document.getElementById('aSaveBtn').textContent = 'Assigning…';
+    document.getElementById('deleteSaveBtn').disabled = true;
+    document.getElementById('deleteSaveBtn').textContent = 'Deleting…';
 
     try {
-      // ENDPOINT: PUT /api/grievances/admin/{id}/assign
-      const res = await fetch(`${API}/api/grievances/admin/${id}/assign`, {
-        method: 'PUT',
-        headers: authHeaders(),
-        body: JSON.stringify({ department: dept, priority })
+      const res = await fetch(`${API}/api/admin/users/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders()
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.message ?? `HTTP ${res.status}`);
+        throw new Error(err.error ?? `HTTP ${res.status}`);
       }
 
-      const updated = await res.json();
-      const idx = allGrievances.findIndex(g => g.id === parseInt(id));
-      if (idx !== -1) allGrievances[idx] = updated;
-
-      closeModal('assignModal');
+      allUsers = allUsers.filter(u => u.id !== parseInt(id));
+      closeModal('deleteModal');
+      updateStats();
       applyFilters();
-      showToast(`Assigned to ${dept}!`, 'success');
+      showToast('User deleted successfully!', 'success');
     } catch (e) {
-      console.error('Assign error:', e);
-      showToast(`Assign failed: ${e.message}`, 'error');
+      console.error('Delete error:', e);
+      showToast(`Delete failed: ${e.message}`, 'error');
     } finally {
-      document.getElementById('aSaveBtn').disabled  = false;
-      document.getElementById('aSaveBtn').textContent = 'Assign';
+      document.getElementById('deleteSaveBtn').disabled  = false;
+      document.getElementById('deleteSaveBtn').textContent = 'Delete User';
     }
   }
 
@@ -919,7 +841,6 @@
   function openModal(id)  { document.getElementById(id).classList.add('active'); }
   function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-  // Close on overlay click
   document.querySelectorAll('.modal-overlay').forEach(el => {
     el.addEventListener('click', e => {
       if (e.target === el) closeModal(el.id);
@@ -939,18 +860,9 @@
       .replace(/&/g,'&amp;').replace(/</g,'&lt;')
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-  function formatStatus(s) {
-    return { OPEN:'Open', IN_PROGRESS:'In Progress', RESOLVED:'Resolved', CLOSED:'Closed' }[s] ?? s;
-  }
-  function formatDate(iso) {
-    if (!iso) return '—';
-    return new Date(iso).toLocaleDateString('en-IN', {
-      day:'2-digit', month:'short', year:'numeric'
-    });
-  }
 
   // ─── INIT ────────────────────────────────────────────────
-  loadAll();
+  loadUsers();
 </script>
 </body>
 </html>

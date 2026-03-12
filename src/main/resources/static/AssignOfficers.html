@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CivicPulse – Admin Panel</title>
+  <title>CivicPulse – Assign Officers</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
@@ -94,6 +94,16 @@
       .content { padding: 20px; }
     }
 
+    .page-header { margin-bottom: 28px; }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.6rem;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .page-header p { color: #6b7280; font-size: 0.92rem; }
+
     /* ── Stats Cards ── */
     .stats-grid {
       display: grid;
@@ -123,11 +133,10 @@
       font-weight: 800;
       color: var(--ink);
     }
-    .stat-card.total  .stat-value { color: var(--admin); }
-    .stat-card.open   .stat-value { color: var(--info); }
-    .stat-card.prog   .stat-value { color: var(--warning); }
-    .stat-card.res    .stat-value { color: var(--success); }
-    .stat-card.closed .stat-value { color: #6b7280; }
+    .stat-card.unassigned .stat-value { color: var(--danger); }
+    .stat-card.assigned   .stat-value { color: var(--success); }
+    .stat-card.officers   .stat-value { color: var(--info); }
+    .stat-card.pending    .stat-value { color: var(--warning); }
 
     /* ── Toolbar ── */
     .toolbar {
@@ -152,9 +161,7 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    .toolbar select:focus, .toolbar input:focus {
-      border-color: var(--admin);
-    }
+    .toolbar select:focus, .toolbar input:focus { border-color: var(--admin); }
     .toolbar input { min-width: 220px; }
     .refresh-btn {
       margin-left: auto;
@@ -190,14 +197,8 @@
       font-weight: 700;
       font-size: 1.1rem;
     }
-    #totalCount {
-      font-size: 0.9rem;
-      color: #6b7280;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
+    #totalCount { font-size: 0.9rem; color: #6b7280; }
+    table { width: 100%; border-collapse: collapse; }
     thead th {
       background: var(--surface);
       padding: 12px 16px;
@@ -221,14 +222,6 @@
       vertical-align: middle;
     }
     .td-title { font-weight: 600; max-width: 240px; }
-    .td-desc {
-      max-width: 200px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: #6b7280;
-      font-size: 0.85rem;
-    }
 
     /* ── Status Badge ── */
     .badge {
@@ -239,15 +232,34 @@
       font-weight: 600;
       white-space: nowrap;
     }
+    .badge-PENDING    { background: #fef3c7; color: #92400e; }
     .badge-OPEN       { background: #dbeafe; color: #1d4ed8; }
     .badge-IN_PROGRESS{ background: #fef3c7; color: #92400e; }
     .badge-RESOLVED   { background: #d1fae5; color: #065f46; }
     .badge-CLOSED     { background: #f3f4f6; color: #374151; }
 
     /* ── Priority Badge ── */
+    .priority-CRITICAL { color: #991b1b; font-weight: 700; font-size: 0.8rem; }
     .priority-HIGH   { color: #ef4444; font-weight: 700; font-size: 0.8rem; }
     .priority-MEDIUM { color: #f59e0b; font-weight: 700; font-size: 0.8rem; }
     .priority-LOW    { color: #10b981; font-weight: 700; font-size: 0.8rem; }
+
+    /* ── Officer tag ── */
+    .officer-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .officer-tag.none {
+      background: #fee2e2;
+      color: #991b1b;
+    }
 
     /* ── Action Buttons ── */
     .action-btn {
@@ -262,9 +274,8 @@
       margin-right: 4px;
     }
     .action-btn:hover { opacity: 0.8; }
-    .btn-view   { background: var(--admin-light); color: var(--admin); }
     .btn-assign { background: #dbeafe; color: #1d4ed8; }
-    .btn-status { background: #d1fae5; color: #065f46; }
+    .btn-view   { background: var(--admin-light); color: var(--admin); }
 
     /* ── Loader / Empty ── */
     .loader {
@@ -299,7 +310,7 @@
       border-radius: 16px;
       padding: 32px;
       width: 100%;
-      max-width: 560px;
+      max-width: 520px;
       max-height: 90vh;
       overflow-y: auto;
       position: relative;
@@ -346,6 +357,19 @@
       margin-top: 4px;
     }
     .modal-select:focus { border-color: var(--admin); }
+    .modal-textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      background: var(--surface);
+      outline: none;
+      margin-top: 4px;
+      resize: vertical;
+    }
+    .modal-textarea:focus { border-color: var(--admin); }
     .modal-actions {
       display: flex;
       gap: 10px;
@@ -425,7 +449,7 @@
   <div class="main">
     <div class="topbar">
       <div class="topbar-left">
-        <h1>All Grievances</h1>
+        <h1>Assign Officers</h1>
         <p id="topbarDate"></p>
       </div>
       <div class="topbar-right">
@@ -434,69 +458,108 @@
     </div>
     <div class="content">
 
+    <div class="page-header">
+      <h1>👷 Assign Officers</h1>
+      <p>Assign officers to grievances, set departments, and manage task routing.</p>
+    </div>
+
     <!-- Stats -->
     <div class="stats-grid">
-      <div class="stat-card total">
-        <span class="stat-label">Total Grievances</span>
-        <span class="stat-value" id="statTotal">—</span>
+      <div class="stat-card unassigned">
+        <span class="stat-label">Unassigned</span>
+        <span class="stat-value" id="statUnassigned">—</span>
       </div>
-      <div class="stat-card open">
-        <span class="stat-label">Open</span>
-        <span class="stat-value" id="statOpen">—</span>
+      <div class="stat-card assigned">
+        <span class="stat-label">Assigned</span>
+        <span class="stat-value" id="statAssigned">—</span>
       </div>
-      <div class="stat-card prog">
-        <span class="stat-label">In Progress</span>
-        <span class="stat-value" id="statProgress">—</span>
+      <div class="stat-card officers">
+        <span class="stat-label">Available Officers</span>
+        <span class="stat-value" id="statOfficers">—</span>
       </div>
-      <div class="stat-card res">
-        <span class="stat-label">Resolved</span>
-        <span class="stat-value" id="statResolved">—</span>
-      </div>
-      <div class="stat-card closed">
-        <span class="stat-label">Closed</span>
-        <span class="stat-value" id="statClosed">—</span>
+      <div class="stat-card pending">
+        <span class="stat-label">Pending Review</span>
+        <span class="stat-value" id="statPending">—</span>
       </div>
     </div>
 
     <!-- Toolbar -->
     <div class="toolbar">
-      <input type="text" id="searchInput" placeholder="🔍  Search by title or username…" oninput="applyFilters()"/>
+      <input type="text" id="searchInput" placeholder="🔍  Search by title or citizen…" oninput="applyFilters()"/>
+      <select id="assignFilter" onchange="applyFilters()">
+        <option value="">All</option>
+        <option value="unassigned">Unassigned Only</option>
+        <option value="assigned">Assigned Only</option>
+      </select>
       <select id="statusFilter" onchange="applyFilters()">
         <option value="">All Statuses</option>
+        <option value="PENDING">Pending</option>
         <option value="OPEN">Open</option>
         <option value="IN_PROGRESS">In Progress</option>
         <option value="RESOLVED">Resolved</option>
-        <option value="CLOSED">Closed</option>
       </select>
-      <select id="deptFilter" onchange="applyFilters()">
-        <option value="">All Departments</option>
-        <option value="Roads">Roads</option>
-        <option value="Water Supply">Water Supply</option>
-        <option value="Electricity">Electricity</option>
-        <option value="Sanitation">Sanitation</option>
-        <option value="Public Safety">Public Safety</option>
-        <option value="Parks">Parks</option>
-        <option value="Other">Other</option>
-      </select>
-      <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+      <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
     </div>
 
     <!-- Table -->
     <div class="table-wrap">
       <div class="table-header">
-        <span class="table-title">All Grievances</span>
+        <span class="table-title">Grievance Assignments</span>
         <span id="totalCount">Loading…</span>
       </div>
       <div id="tableBody">
         <div class="loader"><div class="spinner"></div>Loading grievances…</div>
       </div>
-    </div><!-- /table-wrap -->
+    </div>
 
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
 
-  <!-- View Modal -->
+  <!-- Assign Officer Modal -->
+  <div class="modal-overlay" id="assignModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('assignModal')">✕</button>
+      <div class="modal-title">Assign Officer to Grievance</div>
+      <input type="hidden" id="assignGrievanceId"/>
+      <div class="field-group">
+        <div class="field-label">Grievance</div>
+        <div class="field-value" id="assignTitle">—</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Category</div>
+        <div class="field-value" id="assignCategory">—</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Current Officer</div>
+        <div class="field-value" id="assignCurrentOfficer">—</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Assign to Officer</div>
+        <select class="modal-select" id="assignOfficer">
+          <option value="">— Select Officer —</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Set Status</div>
+        <select class="modal-select" id="assignStatus">
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="PENDING">Pending</option>
+          <option value="OPEN">Open</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Remarks (optional)</div>
+        <textarea class="modal-textarea" id="assignRemarks" rows="3" placeholder="Add assignment notes…"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('assignModal')">Cancel</button>
+        <button class="btn-save" id="assignSaveBtn" onclick="submitAssign()">Assign Officer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Details Modal -->
   <div class="modal-overlay" id="viewModal">
     <div class="modal">
       <button class="modal-close" onclick="closeModal('viewModal')">✕</button>
@@ -508,77 +571,11 @@
       <div class="field-group"><div class="field-label">Department</div><div class="field-value" id="vDept">—</div></div>
       <div class="field-group"><div class="field-label">Priority</div><div class="field-value" id="vPriority">—</div></div>
       <div class="field-group"><div class="field-label">Status</div><div class="field-value" id="vStatus">—</div></div>
+      <div class="field-group"><div class="field-label">Assigned Officer</div><div class="field-value" id="vOfficer">—</div></div>
       <div class="field-group"><div class="field-label">Submitted By</div><div class="field-value" id="vUser">—</div></div>
       <div class="field-group"><div class="field-label">Location</div><div class="field-value" id="vLocation">—</div></div>
       <div class="field-group"><div class="field-label">Submitted On</div><div class="field-value" id="vCreated">—</div></div>
-      <div class="field-group"><div class="field-label">Admin Notes</div><div class="field-value" id="vNotes">—</div></div>
-    </div>
-  </div>
-
-  <!-- Update Modal (Status + Notes) -->
-  <div class="modal-overlay" id="updateModal">
-    <div class="modal">
-      <button class="modal-close" onclick="closeModal('updateModal')">✕</button>
-      <div class="modal-title">Update Grievance</div>
-      <input type="hidden" id="uId"/>
-      <div class="field-group">
-        <div class="field-label">Current Title</div>
-        <div class="field-value" id="uTitle">—</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Status</div>
-        <select class="modal-select" id="uStatus">
-          <option value="OPEN">Open</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="RESOLVED">Resolved</option>
-          <option value="CLOSED">Closed</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Admin Notes</div>
-        <textarea class="modal-select" id="uNotes" rows="3" placeholder="Add notes for the citizen…" style="resize:vertical;"></textarea>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal('updateModal')">Cancel</button>
-        <button class="btn-save" id="uSaveBtn" onclick="submitUpdate()">Save Changes</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Assign Modal -->
-  <div class="modal-overlay" id="assignModal">
-    <div class="modal">
-      <button class="modal-close" onclick="closeModal('assignModal')">✕</button>
-      <div class="modal-title">Assign Department</div>
-      <input type="hidden" id="aId"/>
-      <div class="field-group">
-        <div class="field-label">Grievance</div>
-        <div class="field-value" id="aTitle">—</div>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Assign to Department</div>
-        <select class="modal-select" id="aDept">
-          <option value="Roads">Roads</option>
-          <option value="Water Supply">Water Supply</option>
-          <option value="Electricity">Electricity</option>
-          <option value="Sanitation">Sanitation</option>
-          <option value="Public Safety">Public Safety</option>
-          <option value="Parks">Parks</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <div class="field-group">
-        <div class="field-label">Priority</div>
-        <select class="modal-select" id="aPriority">
-          <option value="LOW">Low</option>
-          <option value="MEDIUM">Medium</option>
-          <option value="HIGH">High</option>
-        </select>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal('assignModal')">Cancel</button>
-        <button class="btn-save" id="aSaveBtn" onclick="submitAssign()">Assign</button>
-      </div>
+      <div class="field-group"><div class="field-label">Remarks</div><div class="field-value" id="vRemarks">—</div></div>
     </div>
   </div>
 
@@ -586,7 +583,6 @@
   <div class="toast" id="toast"></div>
 
 <script>
-  // ─── CONFIG ───────────────────────────────────────────────
   const API = '';
 
   // ─── AUTH GUARD ───────────────────────────────────────────
@@ -638,7 +634,7 @@
       { id: 'settings', label: 'System Settings', icon: gearIcon() },
     ]},
   ];
-  let activeNav = 'allissues';
+  let activeNav = 'assign';
 
   function buildNav() {
     const container = document.getElementById('navItems');
@@ -664,6 +660,7 @@
 
   // ─── STATE ────────────────────────────────────────────────
   let allGrievances = [];
+  let allOfficers   = [];
 
   // ─── HEADERS ─────────────────────────────────────────────
   function authHeaders() {
@@ -681,65 +678,71 @@
     setTimeout(() => t.className = 'toast', 3000);
   }
 
-  // ─── LOAD STATS ──────────────────────────────────────────
-  async function loadStats() {
-    try {
-      const res = await fetch(`${API}/api/grievances/admin/stats`, {
-        headers: authHeaders()
-      });
-      if (!res.ok) throw new Error('Stats fetch failed');
-      const data = await res.json();
-      // Expected: { total, open, inProgress, resolved, closed }
-      document.getElementById('statTotal').textContent    = data.total    ?? '—';
-      document.getElementById('statOpen').textContent     = data.open     ?? '—';
-      document.getElementById('statProgress').textContent = data.inProgress ?? '—';
-      document.getElementById('statResolved').textContent = data.resolved  ?? '—';
-      document.getElementById('statClosed').textContent   = data.closed    ?? '—';
-    } catch (e) {
-      console.error('Stats error:', e);
-    }
-  }
-
-  // ─── LOAD ALL GRIEVANCES ──────────────────────────────────
-  async function loadAll() {
+  // ─── LOAD DATA ───────────────────────────────────────────
+  async function loadData() {
     document.getElementById('tableBody').innerHTML =
-      `<div class="loader"><div class="spinner"></div>Loading grievances…</div>`;
+      `<div class="loader"><div class="spinner"></div>Loading data…</div>`;
 
     try {
-      const res = await fetch(`${API}/api/grievances/admin/all`, {
-        headers: authHeaders()
-      });
+      const [grievRes, officerRes] = await Promise.all([
+        fetch(`${API}/api/grievances/admin/all`, { headers: authHeaders() }),
+        fetch(`${API}/api/admin/officers`, { headers: authHeaders() })
+      ]);
 
-      if (res.status === 403) {
-        showToast('Access denied – admin only', 'error');
-        return;
-      }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!grievRes.ok) throw new Error(`Grievances: HTTP ${grievRes.status}`);
+      if (!officerRes.ok) throw new Error(`Officers: HTTP ${officerRes.status}`);
 
-      allGrievances = await res.json();
+      allGrievances = await grievRes.json();
+      allOfficers   = await officerRes.json();
+
+      updateStats();
       applyFilters();
-      loadStats();
+      populateOfficerDropdown();
     } catch (e) {
       console.error('Load error:', e);
       document.getElementById('tableBody').innerHTML =
-        `<div class="empty">⚠️ Failed to load grievances. Check console.</div>`;
-      showToast('Failed to load grievances', 'error');
+        `<div class="empty">⚠️ Failed to load data. Check console.</div>`;
+      showToast('Failed to load data', 'error');
     }
+  }
+
+  // ─── POPULATE OFFICER DROPDOWN ───────────────────────────
+  function populateOfficerDropdown() {
+    const sel = document.getElementById('assignOfficer');
+    sel.innerHTML = '<option value="">— Select Officer —</option>';
+    allOfficers.forEach(o => {
+      sel.innerHTML += `<option value="${escHtml(o.username)}">${escHtml(o.username)}${o.email ? ' (' + escHtml(o.email) + ')' : ''}</option>`;
+    });
+  }
+
+  // ─── UPDATE STATS ────────────────────────────────────────
+  function updateStats() {
+    const unassigned = allGrievances.filter(g => !g.assignedOfficer).length;
+    const assigned   = allGrievances.filter(g => g.assignedOfficer).length;
+    const pending    = allGrievances.filter(g => g.status === 'PENDING' || g.status === 'OPEN').length;
+
+    document.getElementById('statUnassigned').textContent = unassigned;
+    document.getElementById('statAssigned').textContent   = assigned;
+    document.getElementById('statOfficers').textContent   = allOfficers.length;
+    document.getElementById('statPending').textContent    = pending;
   }
 
   // ─── FILTER + RENDER ─────────────────────────────────────
   function applyFilters() {
     const search = document.getElementById('searchInput').value.toLowerCase();
+    const assign = document.getElementById('assignFilter').value;
     const status = document.getElementById('statusFilter').value;
-    const dept   = document.getElementById('deptFilter').value;
 
     let filtered = allGrievances.filter(g => {
       const matchSearch = !search ||
         g.title?.toLowerCase().includes(search) ||
-        g.username?.toLowerCase().includes(search);
+        g.citizenUsername?.toLowerCase().includes(search);
+      const matchAssign =
+        !assign ||
+        (assign === 'unassigned' && !g.assignedOfficer) ||
+        (assign === 'assigned' && g.assignedOfficer);
       const matchStatus = !status || g.status === status;
-      const matchDept   = !dept   || g.department === dept;
-      return matchSearch && matchStatus && matchDept;
+      return matchSearch && matchAssign && matchStatus;
     });
 
     document.getElementById('totalCount').textContent =
@@ -761,17 +764,19 @@
       <tr>
         <td><code style="font-size:0.78rem;color:#6b7280;">#${g.id}</code></td>
         <td class="td-title">${escHtml(g.title ?? '—')}</td>
-        <td class="td-desc" title="${escHtml(g.description ?? '')}">${escHtml(g.description ?? '—')}</td>
         <td>${escHtml(g.category ?? '—')}</td>
-        <td>${escHtml(g.department ?? '<span style="color:#9ca3af">Unassigned</span>')}</td>
-        <td><span class="priority-${g.priority ?? 'LOW'}">${g.priority ?? '—'}</span></td>
+        <td><span class="priority-${g.priority ?? 'MEDIUM'}">${g.priority ?? '—'}</span></td>
         <td><span class="badge badge-${g.status}">${formatStatus(g.status)}</span></td>
-        <td style="font-size:0.85rem;color:#374151;">${escHtml(g.username ?? '—')}</td>
-        <td style="font-size:0.82rem;color:#6b7280;">${formatDate(g.createdAt)}</td>
+        <td style="font-size:0.85rem;">${escHtml(g.citizenUsername ?? '—')}</td>
         <td>
-          <button class="action-btn btn-view"   onclick="openView(${g.id})">View</button>
+          ${g.assignedOfficer
+            ? `<span class="officer-tag">👷 ${escHtml(g.assignedOfficer)}</span>`
+            : `<span class="officer-tag none">Unassigned</span>`}
+        </td>
+        <td style="font-size:0.82rem;color:#6b7280;">${formatDate(g.submittedAt)}</td>
+        <td>
           <button class="action-btn btn-assign" onclick="openAssign(${g.id})">Assign</button>
-          <button class="action-btn btn-status" onclick="openUpdate(${g.id})">Update</button>
+          <button class="action-btn btn-view" onclick="openView(${g.id})">View</button>
         </td>
       </tr>
     `).join('');
@@ -782,18 +787,80 @@
           <tr>
             <th>ID</th>
             <th>Title</th>
-            <th>Description</th>
             <th>Category</th>
-            <th>Department</th>
             <th>Priority</th>
             <th>Status</th>
-            <th>Submitted By</th>
+            <th>Citizen</th>
+            <th>Assigned Officer</th>
             <th>Date</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>`;
+  }
+
+  // ─── ASSIGN MODAL ────────────────────────────────────────
+  function openAssign(id) {
+    const g = allGrievances.find(x => x.id === id);
+    if (!g) return;
+    document.getElementById('assignGrievanceId').value        = g.id;
+    document.getElementById('assignTitle').textContent        = g.title ?? '—';
+    document.getElementById('assignCategory').textContent     = g.category ?? '—';
+    document.getElementById('assignCurrentOfficer').textContent = g.assignedOfficer ?? 'None';
+    document.getElementById('assignOfficer').value            = g.assignedOfficer ?? '';
+    document.getElementById('assignStatus').value             = g.assignedOfficer ? 'IN_PROGRESS' : 'IN_PROGRESS';
+    document.getElementById('assignRemarks').value            = '';
+    document.getElementById('assignSaveBtn').disabled         = false;
+    openModal('assignModal');
+  }
+
+  async function submitAssign() {
+    const grievanceId    = parseInt(document.getElementById('assignGrievanceId').value);
+    const assignedOfficer = document.getElementById('assignOfficer').value;
+    const status          = document.getElementById('assignStatus').value;
+    const remarks         = document.getElementById('assignRemarks').value.trim();
+
+    if (!assignedOfficer) {
+      showToast('Please select an officer', 'error');
+      return;
+    }
+
+    document.getElementById('assignSaveBtn').disabled = true;
+    document.getElementById('assignSaveBtn').textContent = 'Assigning…';
+
+    try {
+      const res = await fetch(`${API}/api/grievances/admin/assign`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          grievanceId,
+          assignedOfficer,
+          status,
+          remarks: remarks || null
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `HTTP ${res.status}`);
+      }
+
+      const updated = await res.json();
+      const idx = allGrievances.findIndex(g => g.id === grievanceId);
+      if (idx !== -1) allGrievances[idx] = updated;
+
+      closeModal('assignModal');
+      updateStats();
+      applyFilters();
+      showToast(`Assigned to ${assignedOfficer}!`, 'success');
+    } catch (e) {
+      console.error('Assign error:', e);
+      showToast(`Assign failed: ${e.message}`, 'error');
+    } finally {
+      document.getElementById('assignSaveBtn').disabled  = false;
+      document.getElementById('assignSaveBtn').textContent = 'Assign Officer';
+    }
   }
 
   // ─── VIEW MODAL ──────────────────────────────────────────
@@ -807,119 +874,18 @@
     document.getElementById('vDept').textContent     = g.department ?? 'Unassigned';
     document.getElementById('vPriority').textContent = g.priority ?? '—';
     document.getElementById('vStatus').innerHTML     = `<span class="badge badge-${g.status}">${formatStatus(g.status)}</span>`;
-    document.getElementById('vUser').textContent     = g.username ?? '—';
+    document.getElementById('vOfficer').textContent  = g.assignedOfficer ?? 'None';
+    document.getElementById('vUser').textContent     = g.citizenUsername ?? '—';
     document.getElementById('vLocation').textContent = g.location ?? '—';
-    document.getElementById('vCreated').textContent  = formatDate(g.createdAt);
-    document.getElementById('vNotes').textContent    = g.adminNotes ?? 'None';
+    document.getElementById('vCreated').textContent  = formatDate(g.submittedAt);
+    document.getElementById('vRemarks').textContent  = g.remarks ?? 'None';
     openModal('viewModal');
-  }
-
-  // ─── UPDATE MODAL ────────────────────────────────────────
-  function openUpdate(id) {
-    const g = allGrievances.find(x => x.id === id);
-    if (!g) return;
-    document.getElementById('uId').value           = g.id;
-    document.getElementById('uTitle').textContent  = g.title ?? '—';
-    document.getElementById('uStatus').value       = g.status ?? 'OPEN';
-    document.getElementById('uNotes').value        = g.adminNotes ?? '';
-    document.getElementById('uSaveBtn').disabled   = false;
-    openModal('updateModal');
-  }
-
-  async function submitUpdate() {
-    const id     = document.getElementById('uId').value;
-    const status = document.getElementById('uStatus').value;
-    const notes  = document.getElementById('uNotes').value.trim();
-
-    document.getElementById('uSaveBtn').disabled = true;
-    document.getElementById('uSaveBtn').textContent = 'Saving…';
-
-    try {
-      // ENDPOINT: PUT /api/grievances/admin/{id}/update
-      const res = await fetch(`${API}/api/grievances/admin/${id}/update`, {
-        method: 'PUT',
-        headers: authHeaders(),
-        body: JSON.stringify({ status, adminNotes: notes })
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message ?? `HTTP ${res.status}`);
-      }
-
-      const updated = await res.json();
-
-      // Merge into local state
-      const idx = allGrievances.findIndex(g => g.id === parseInt(id));
-      if (idx !== -1) allGrievances[idx] = updated;
-
-      closeModal('updateModal');
-      applyFilters();
-      loadStats();
-      showToast('Grievance updated successfully!', 'success');
-    } catch (e) {
-      console.error('Update error:', e);
-      showToast(`Update failed: ${e.message}`, 'error');
-    } finally {
-      document.getElementById('uSaveBtn').disabled  = false;
-      document.getElementById('uSaveBtn').textContent = 'Save Changes';
-    }
-  }
-
-  // ─── ASSIGN MODAL ────────────────────────────────────────
-  function openAssign(id) {
-    const g = allGrievances.find(x => x.id === id);
-    if (!g) return;
-    document.getElementById('aId').value           = g.id;
-    document.getElementById('aTitle').textContent  = g.title ?? '—';
-    document.getElementById('aDept').value         = g.department ?? 'Other';
-    document.getElementById('aPriority').value     = g.priority   ?? 'LOW';
-    document.getElementById('aSaveBtn').disabled   = false;
-    openModal('assignModal');
-  }
-
-  async function submitAssign() {
-    const id       = document.getElementById('aId').value;
-    const dept     = document.getElementById('aDept').value;
-    const priority = document.getElementById('aPriority').value;
-
-    document.getElementById('aSaveBtn').disabled = true;
-    document.getElementById('aSaveBtn').textContent = 'Assigning…';
-
-    try {
-      // ENDPOINT: PUT /api/grievances/admin/{id}/assign
-      const res = await fetch(`${API}/api/grievances/admin/${id}/assign`, {
-        method: 'PUT',
-        headers: authHeaders(),
-        body: JSON.stringify({ department: dept, priority })
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message ?? `HTTP ${res.status}`);
-      }
-
-      const updated = await res.json();
-      const idx = allGrievances.findIndex(g => g.id === parseInt(id));
-      if (idx !== -1) allGrievances[idx] = updated;
-
-      closeModal('assignModal');
-      applyFilters();
-      showToast(`Assigned to ${dept}!`, 'success');
-    } catch (e) {
-      console.error('Assign error:', e);
-      showToast(`Assign failed: ${e.message}`, 'error');
-    } finally {
-      document.getElementById('aSaveBtn').disabled  = false;
-      document.getElementById('aSaveBtn').textContent = 'Assign';
-    }
   }
 
   // ─── MODAL HELPERS ───────────────────────────────────────
   function openModal(id)  { document.getElementById(id).classList.add('active'); }
   function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-  // Close on overlay click
   document.querySelectorAll('.modal-overlay').forEach(el => {
     el.addEventListener('click', e => {
       if (e.target === el) closeModal(el.id);
@@ -940,7 +906,7 @@
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
   function formatStatus(s) {
-    return { OPEN:'Open', IN_PROGRESS:'In Progress', RESOLVED:'Resolved', CLOSED:'Closed' }[s] ?? s;
+    return { OPEN:'Open', PENDING:'Pending', IN_PROGRESS:'In Progress', RESOLVED:'Resolved', CLOSED:'Closed' }[s] ?? s;
   }
   function formatDate(iso) {
     if (!iso) return '—';
@@ -950,7 +916,7 @@
   }
 
   // ─── INIT ────────────────────────────────────────────────
-  loadAll();
+  loadData();
 </script>
 </body>
 </html>

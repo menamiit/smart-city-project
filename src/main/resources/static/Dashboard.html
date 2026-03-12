@@ -328,17 +328,17 @@ const NAV = {
     { section: 'Main', items: [
       { id: 'overview', label: 'Overview',        icon: homeIcon(),    badge: null },
       { id: 'submit',   label: 'Submit Grievance', icon: plusIcon(),    badge: null },
-      { id: 'myissues', label: 'My Grievances',   icon: listIcon(),    badge: '3'  },
+      { id: 'myissues', label: 'My Grievances',   icon: listIcon(),    badge: null },
     ]},
     { section: 'Account', items: [
       { id: 'profile',  label: 'My Profile',      icon: userIcon(),    badge: null },
-      { id: 'notifications', label: 'Notifications', icon: bellIcon(), badge: '2'  },
+      { id: 'notifications', label: 'Notifications', icon: bellIcon(), badge: null },
     ]},
   ],
   ADMIN: [
     { section: 'Management', items: [
       { id: 'overview',  label: 'Dashboard',       icon: homeIcon(),   badge: null },
-      { id: 'allissues', label: 'All Grievances',  icon: listIcon(),   badge: '12' },
+      { id: 'allissues', label: 'All Grievances',  icon: listIcon(),   badge: null },
       { id: 'assign',    label: 'Assign Officers', icon: assignIcon(), badge: null },
       { id: 'users',     label: 'Manage Users',    icon: usersIcon(),  badge: null },
     ]},
@@ -350,8 +350,8 @@ const NAV = {
   OFFICER: [
     { section: 'Work', items: [
       { id: 'overview',   label: 'Overview',       icon: homeIcon(),   badge: null },
-      { id: 'assigned',   label: 'Assigned Tasks', icon: listIcon(),   badge: '5'  },
-      { id: 'inprogress', label: 'In Progress',    icon: wrenchIcon(), badge: '2'  },
+      { id: 'assigned',   label: 'Assigned Tasks', icon: listIcon(),   badge: null },
+      { id: 'inprogress', label: 'In Progress',    icon: wrenchIcon(), badge: null },
       { id: 'completed',  label: 'Completed',      icon: checkIcon(),  badge: null },
     ]},
     { section: 'Info', items: [
@@ -368,6 +368,7 @@ let dashboardData = {
   grievances: [],
   loading: true,
   error: null,
+  userCount: null,
 };
 
 function buildNav() {
@@ -395,12 +396,18 @@ function getDynamicNavBadge(itemId) {
   if (itemId === 'myissues') return list.length || null;
   if (itemId === 'allissues') return list.length || null;
   if (itemId === 'assigned') return list.filter(g => g.status === 'PENDING' || g.status === 'IN_PROGRESS').length || null;
+  if (itemId === 'inprogress') return list.filter(g => g.status === 'IN_PROGRESS').length || null;
+  if (itemId === 'completed') return list.filter(g => g.status === 'RESOLVED' || g.status === 'CLOSED').length || null;
+  if (itemId === 'users') return dashboardData.userCount || null;
   return null;
 }
 
 function navigateTo(panelId) {
-  if (panelId === 'submit')    { window.location.href = '/submit.html';       return; }
-  if (panelId === 'myissues')  { window.location.href = '/mygrievances.html'; return; }
+  if (panelId === 'submit')    { window.location.href = '/Submit.html';          return; }
+  if (panelId === 'myissues')  { window.location.href = '/MyGrievances.html';    return; }
+  if (panelId === 'allissues') { window.location.href = '/AdminGrievances.html'; return; }
+  if (panelId === 'users')     { window.location.href = '/ManageUsers.html';     return; }
+  if (panelId === 'assign')    { window.location.href = '/AssignOfficers.html';  return; }
   activeNav = panelId;
   buildNav();
   renderContent(panelId);
@@ -524,7 +531,7 @@ function renderOverview() {
       <div class="card">
         <div class="card-header">
           <span class="card-title">Recent ${role === 'CITIZEN' ? 'My Grievances' : 'Grievances'}</span>
-          <span class="card-action" onclick="window.location.href='/mygrievances.html'">View all →</span>
+          <span class="card-action" onclick="window.location.href=role==='CITIZEN'?'/MyGrievances.html':'/AdminGrievances.html'">View all →</span>
         </div>
         ${recent.length ? recent.map(g => `
           <div class="grievance-item">
@@ -617,6 +624,20 @@ async function loadDashboardData() {
     dashboardData.loading = false;
     buildNav();
     renderContent('overview');
+  }
+
+  // Load user count for admin badge
+  if (role === 'ADMIN') {
+    try {
+      const uRes = await fetch('/api/admin/users', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (uRes.ok) {
+        const users = await uRes.json();
+        dashboardData.userCount = users.length;
+        buildNav();
+      }
+    } catch (e) { /* ignore */ }
   }
 }
 

@@ -65,6 +65,9 @@ public class SecurityConfig {
                     "/Submit.html",
                     "/MyGrievances.html",
                     "/admin.html",
+                    "/AdminGrievances.html",
+                    "/ManageUsers.html",
+                    "/AssignOfficers.html",
                     "/dashboard",
                     "/submit",
                     "/mygrievances",
@@ -76,8 +79,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 // ── Grievance API — JWT validated in filter ────────────────
                 .requestMatchers("/api/grievances/**").permitAll()
-                // ── Role protected ─────────────────────────────────────────
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // ── Admin API — JWT validated in controller ────────────────
+                .requestMatchers("/api/admin/**").permitAll()
                 .requestMatchers("/api/officer/**").hasRole("OFFICER")
                 .anyRequest().authenticated()
             )

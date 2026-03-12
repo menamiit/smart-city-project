@@ -9,10 +9,34 @@
     href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap%22 rel="
     stylesheet">
   <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --ink: #0d1117;
+      --ink-soft: #4b5563;
+      --surface: #f3f5f9;
+      --panel: #ffffff;
+      --accent: #1a56db;
+      --accent-hover: #1641b0;
+      --accent-light: #e8effd;
+      --border: #e5e8f0;
+      --citizen: #0ea5e9;
+      --success: #10b981;
+      --sidebar-w: 260px;
+    }
+
     /* === FIX: Prevent left crooked layout === */
     html,
     body {
+      height: 100%;
       overflow-x: hidden;
+      font-family: 'DM Sans', sans-serif;
+      background: var(--surface);
+      color: var(--ink);
     }
 
     .app {
@@ -23,11 +47,16 @@
     }
 
     .sidebar {
+      background: var(--ink);
+      display: flex;
+      flex-direction: column;
       position: fixed;
       top: 0;
       left: 0;
       width: var(--sidebar-w);
       height: 100vh;
+      overflow-y: auto;
+      z-index: 100;
       will-change: transform;
       backface-visibility: hidden;
     }
@@ -171,6 +200,8 @@
     /* MAIN */
     .main {
       margin-left: var(--sidebar-w);
+      width: calc(100% - var(--sidebar-w));
+      min-height: 100vh;
     }
 
     .topbar {
@@ -214,6 +245,7 @@
     /* CONTENT */
     .content {
       padding: 32px;
+      width: 100%;
       max-width: 760px;
     }
 
@@ -502,17 +534,18 @@
     }
 
     @media (max-width: 768px) {
-      .app {
-        grid-template-columns: 1fr;
-      }
-
       .sidebar {
         display: none;
       }
 
       .main {
         margin-left: 0;
+        width: 100%;
       }
+
+      .content { padding: 20px; }
+
+      .form-card { padding: 24px; }
 
       .category-grid {
         grid-template-columns: repeat(2, 1fr);

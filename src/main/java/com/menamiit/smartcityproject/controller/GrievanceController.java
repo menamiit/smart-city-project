@@ -118,4 +118,59 @@ public class GrievanceController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    // ── GET /api/grievances/admin/all ─────────────────────────────────────────
+    @GetMapping("/admin/all")
+    public ResponseEntity<?> adminGetAll(
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            List<GrievanceResponse> list = grievanceService.getAll();
+            return ResponseEntity.ok(list);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ── PUT /api/grievances/admin/{id}/update ─────────────────────────────────
+    @PutMapping("/admin/{id}/update")
+    public ResponseEntity<?> adminUpdate(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            String status     = body.get("status");
+            String adminNotes = body.get("adminNotes");
+            GrievanceResponse response = grievanceService.adminUpdate(id, status, adminNotes, extractToken(authHeader));
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ── PUT /api/grievances/admin/{id}/assign ─────────────────────────────────
+    @PutMapping("/admin/{id}/assign")
+    public ResponseEntity<?> adminAssignDeptPriority(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            String department = body.get("department");
+            String priority   = body.get("priority");
+            GrievanceResponse response = grievanceService.adminAssignDeptPriority(id, department, priority, extractToken(authHeader));
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ── GET /api/grievances/admin/stats ───────────────────────────────────────
+    @GetMapping("/admin/stats")
+    public ResponseEntity<?> adminStats(
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            return ResponseEntity.ok(grievanceService.getStats(extractToken(authHeader)));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));
+        }
+    }
 }

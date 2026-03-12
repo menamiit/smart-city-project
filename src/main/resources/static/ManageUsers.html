@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CivicPulse – Manage Users</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #0d1117; --ink-soft: #4b5563;
+      --surface: #f3f5f9;
+      --panel: #ffffff;
+      --accent: #1a56db;
+      --admin: #8b5cf6; --admin-bg: #f5f3ff; --admin-light: #ede9fe;
+      --border: #e5e8f0;
+      --sidebar-w: 260px;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+    }
+    body.role-admin { --role-color: var(--admin); --role-bg: var(--admin-bg); --role-accent: #4c1d95; }
+    html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); }
+
+    /* ── LAYOUT ── */
+    .app { min-height: 100vh; width: 100%; }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      background: var(--ink); display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0;
+      width: var(--sidebar-w); height: 100vh;
+      overflow-y: auto; z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 24px 20px 20px; display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .logo-icon-sm {
+      width: 34px; height: 34px; background: var(--accent); border-radius: 9px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .logo-icon-sm svg { width: 18px; height: 18px; fill: white; }
+    .logo-text-sm { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: white; }
+    .sidebar-role {
+      margin: 16px 16px 8px; padding: 10px 14px; border-radius: 12px;
+      background: rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px;
+    }
+    .role-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--role-color); flex-shrink: 0; }
+    .role-name-display { font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 0.06em; }
+    .role-username { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-top: 1px; }
+    .nav-section { padding: 20px 12px 8px; }
+    .nav-section-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.3); padding: 0 8px; margin-bottom: 6px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px; cursor: pointer; text-decoration: none;
+      color: rgba(255,255,255,0.55); font-size: 0.88rem; font-weight: 500;
+      transition: background 0.15s, color 0.15s; margin-bottom: 2px;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+    .nav-item.active { background: var(--role-color); color: white; }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .logout-btn {
+      width: 100%; padding: 10px; background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.2); border-radius: 10px;
+      color: #f87171; font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+      font-weight: 500; cursor: pointer; transition: background 0.15s;
+    }
+    .logout-btn:hover { background: rgba(239,68,68,0.22); }
+
+    /* ── MAIN ── */
+    .main { margin-left: var(--sidebar-w); width: calc(100% - var(--sidebar-w)); padding: 0; min-height: 100vh; }
+    .topbar {
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .topbar-left h1 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.25rem; color: var(--ink); }
+    .topbar-left p { font-size: 0.82rem; color: var(--ink-soft); margin-top: 1px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .avatar {
+      width: 38px; height: 38px; border-radius: 50%; background: var(--role-color); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.9rem;
+    }
+    .content { padding: 32px; width: 100%; max-width: 1200px; }
+
+    @media (max-width: 640px) {
+      .sidebar { transform: translateX(-100%); }
+      .main { margin-left: 0; width: 100%; }
+      .content { padding: 20px; }
+    }
+
+    /* ── Page Header ── */
+    .page-header {
+      margin-bottom: 28px;
+    }
+    .page-header h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.6rem;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+    .page-header p {
+      color: #6b7280;
+      font-size: 0.92rem;
+    }
+
+    /* ── Stats Cards ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6b7280;
+      font-weight: 500;
+    }
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .stat-card.total   .stat-value { color: var(--admin); }
+    .stat-card.citizen  .stat-value { color: var(--info); }
+    .stat-card.officer  .stat-value { color: var(--success); }
+    .stat-card.admin-c  .stat-value { color: var(--warning); }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .toolbar select, .toolbar input {
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      background: var(--surface);
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .toolbar select:focus, .toolbar input:focus {
+      border-color: var(--admin);
+    }
+    .toolbar input { min-width: 220px; }
+    .refresh-btn {
+      margin-left: auto;
+      padding: 9px 18px;
+      background: var(--admin);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .refresh-btn:hover { background: #6d28d9; }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .table-header {
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .table-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    #totalCount {
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    thead th {
+      background: var(--surface);
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #6b7280;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #faf9ff; }
+    td {
+      padding: 14px 16px;
+      font-size: 0.92rem;
+      vertical-align: middle;
+    }
+
+    /* ── Role Badge ── */
+    .role-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .role-CITIZEN  { background: #dbeafe; color: #1d4ed8; }
+    .role-ADMIN    { background: #ede9fe; color: #7c3aed; }
+    .role-OFFICER  { background: #d1fae5; color: #065f46; }
+
+    /* ── Action Buttons ── */
+    .action-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      margin-right: 4px;
+    }
+    .action-btn:hover { opacity: 0.8; }
+    .btn-edit   { background: var(--admin-light); color: var(--admin); }
+    .btn-delete { background: #fee2e2; color: #dc2626; }
+
+    /* ── Loader / Empty ── */
+    .loader {
+      text-align: center;
+      padding: 60px;
+      color: #6b7280;
+      font-size: 1rem;
+    }
+    .loader .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--admin);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty { text-align: center; padding: 60px; color: #6b7280; }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+    }
+    .modal-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: var(--admin);
+      margin-bottom: 20px;
+    }
+    .modal-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: none; border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: #6b7280;
+      line-height: 1;
+    }
+    .field-group { margin-bottom: 16px; }
+    .field-label {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #6b7280;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .field-value {
+      font-size: 0.95rem;
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    .modal-select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      background: var(--surface);
+      outline: none;
+      margin-top: 4px;
+    }
+    .modal-select:focus { border-color: var(--admin); }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+      justify-content: flex-end;
+    }
+    .btn-cancel {
+      padding: 10px 20px;
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-save {
+      padding: 10px 20px;
+      background: var(--admin);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-save:hover { background: #6d28d9; }
+    .btn-save:disabled { background: #c4b5fd; cursor: not-allowed; }
+    .btn-danger {
+      padding: 10px 20px;
+      background: var(--danger);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-danger:hover { background: #dc2626; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 30px; right: 30px;
+      background: #1e293b;
+      color: #fff;
+      padding: 14px 22px;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      font-weight: 500;
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { border-left: 4px solid var(--success); }
+    .toast.error   { border-left: 4px solid var(--danger); }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon-sm">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      </div>
+      <span class="logo-text-sm">CivicPulse</span>
+    </div>
+    <div class="sidebar-role">
+      <div class="role-dot"></div>
+      <div class="role-info">
+        <div class="role-name-display" id="sidebarRole">ADMIN</div>
+        <div class="role-username" id="sidebarUsername">@user</div>
+      </div>
+    </div>
+    <div id="navItems"></div>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">⬡ Sign Out</button>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Manage Users</h1>
+        <p id="topbarDate"></p>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" id="userAvatar">?</div>
+      </div>
+    </div>
+    <div class="content">
+
+    <div class="page-header">
+      <h1>👥 Manage Users</h1>
+      <p>View all registered users, change roles, and manage accounts.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <span class="stat-label">Total Users</span>
+        <span class="stat-value" id="statTotal">—</span>
+      </div>
+      <div class="stat-card citizen">
+        <span class="stat-label">Citizens</span>
+        <span class="stat-value" id="statCitizens">—</span>
+      </div>
+      <div class="stat-card officer">
+        <span class="stat-label">Officers</span>
+        <span class="stat-value" id="statOfficers">—</span>
+      </div>
+      <div class="stat-card admin-c">
+        <span class="stat-label">Admins</span>
+        <span class="stat-value" id="statAdmins">—</span>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <input type="text" id="searchInput" placeholder="🔍  Search by username or email…" oninput="applyFilters()"/>
+      <select id="roleFilter" onchange="applyFilters()">
+        <option value="">All Roles</option>
+        <option value="CITIZEN">Citizen</option>
+        <option value="ADMIN">Admin</option>
+        <option value="OFFICER">Officer</option>
+      </select>
+      <button class="refresh-btn" onclick="loadUsers()">↻ Refresh</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div class="table-header">
+        <span class="table-title">All Users</span>
+        <span id="totalCount">Loading…</span>
+      </div>
+      <div id="tableBody">
+        <div class="loader"><div class="spinner"></div>Loading users…</div>
+      </div>
+    </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+  <!-- Edit Role Modal -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('editModal')">✕</button>
+      <div class="modal-title">Change User Role</div>
+      <input type="hidden" id="editId"/>
+      <div class="field-group">
+        <div class="field-label">Username</div>
+        <div class="field-value" id="editUsername">—</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Email</div>
+        <div class="field-value" id="editEmail">—</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Current Role</div>
+        <div class="field-value" id="editCurrentRole">—</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">New Role</div>
+        <select class="modal-select" id="editRole">
+          <option value="CITIZEN">Citizen</option>
+          <option value="OFFICER">Officer</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('editModal')">Cancel</button>
+        <button class="btn-save" id="editSaveBtn" onclick="submitRoleChange()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal('deleteModal')">✕</button>
+      <div class="modal-title" style="color: var(--danger);">Delete User</div>
+      <input type="hidden" id="deleteId"/>
+      <p style="margin-bottom: 12px;">Are you sure you want to delete this user?</p>
+      <div class="field-group">
+        <div class="field-label">Username</div>
+        <div class="field-value" id="deleteUsername">—</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Role</div>
+        <div class="field-value" id="deleteRole">—</div>
+      </div>
+      <p style="font-size:0.85rem;color:var(--danger);margin-top:8px;">⚠️ This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal('deleteModal')">Cancel</button>
+        <button class="btn-danger" id="deleteSaveBtn" onclick="submitDelete()">Delete User</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+<script>
+  const API = '';
+
+  // ─── AUTH GUARD ───────────────────────────────────────────
+  const token   = localStorage.getItem('civicpulse_token');
+  const userStr = localStorage.getItem('civicpulse_user');
+
+  if (!token || !userStr) {
+    alert('Please login first!');
+    window.location.href = '/index.html';
+    throw new Error('Not authenticated');
+  }
+
+  const currentUser = JSON.parse(userStr);
+
+  if (currentUser.role !== 'ADMIN') {
+    alert('Access denied. Admins only.');
+    window.location.href = '/Dashboard.html';
+    throw new Error('Not admin');
+  }
+
+  // ─── SIDEBAR SETUP ───────────────────────────────────────
+  document.body.classList.add('role-admin');
+  document.getElementById('sidebarRole').textContent    = 'ADMIN';
+  document.getElementById('sidebarUsername').textContent = '@' + currentUser.username;
+  document.getElementById('userAvatar').textContent     = currentUser.username[0].toUpperCase();
+
+  const now = new Date();
+  document.getElementById('topbarDate').textContent =
+    now.toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  // ─── SVG ICONS ────────────────────────────────────────────
+  function homeIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`; }
+  function listIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>`; }
+  function usersIcon()  { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>`; }
+  function assignIcon() { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>`; }
+  function chartIcon()  { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>`; }
+  function gearIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`; }
+
+  // ─── SIDEBAR NAV ──────────────────────────────────────────
+  const NAV_SECTIONS = [
+    { section: 'Management', items: [
+      { id: 'overview',  label: 'Dashboard',       icon: homeIcon() },
+      { id: 'allissues', label: 'All Grievances',  icon: listIcon() },
+      { id: 'assign',    label: 'Assign Officers', icon: assignIcon() },
+      { id: 'users',     label: 'Manage Users',    icon: usersIcon() },
+    ]},
+    { section: 'Analytics', items: [
+      { id: 'reports',  label: 'SLA Reports',     icon: chartIcon() },
+      { id: 'settings', label: 'System Settings', icon: gearIcon() },
+    ]},
+  ];
+  let activeNav = 'users';
+
+  function buildNav() {
+    const container = document.getElementById('navItems');
+    let html = '';
+    for (const sec of NAV_SECTIONS) {
+      html += `<div class="nav-section"><div class="nav-section-label">${sec.section}</div>`;
+      for (const item of sec.items) {
+        html += `<a class="nav-item ${item.id === activeNav ? 'active' : ''}" onclick="navigateTo('${item.id}')" href="#">${item.icon} ${item.label}</a>`;
+      }
+      html += '</div>';
+    }
+    container.innerHTML = html;
+  }
+
+  function navigateTo(id) {
+    if (id === 'overview')   { window.location.href = '/Dashboard.html'; return; }
+    if (id === 'allissues')  { window.location.href = '/AdminGrievances.html'; return; }
+    if (id === 'users')      { window.location.href = '/ManageUsers.html'; return; }
+    if (id === 'assign')     { window.location.href = '/AssignOfficers.html'; return; }
+  }
+
+  buildNav();
+
+  // ─── STATE ────────────────────────────────────────────────
+  let allUsers = [];
+
+  // ─── HEADERS ─────────────────────────────────────────────
+  function authHeaders() {
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  }
+
+  // ─── TOAST ───────────────────────────────────────────────
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.className = 'toast', 3000);
+  }
+
+  // ─── LOAD USERS ──────────────────────────────────────────
+  async function loadUsers() {
+    document.getElementById('tableBody').innerHTML =
+      `<div class="loader"><div class="spinner"></div>Loading users…</div>`;
+
+    try {
+      const res = await fetch(`${API}/api/admin/users`, {
+        headers: authHeaders()
+      });
+
+      if (res.status === 403) {
+        showToast('Access denied – admin only', 'error');
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      allUsers = await res.json();
+      updateStats();
+      applyFilters();
+    } catch (e) {
+      console.error('Load error:', e);
+      document.getElementById('tableBody').innerHTML =
+        `<div class="empty">⚠️ Failed to load users. Check console.</div>`;
+      showToast('Failed to load users', 'error');
+    }
+  }
+
+  // ─── UPDATE STATS ────────────────────────────────────────
+  function updateStats() {
+    document.getElementById('statTotal').textContent    = allUsers.length;
+    document.getElementById('statCitizens').textContent = allUsers.filter(u => u.role === 'CITIZEN').length;
+    document.getElementById('statOfficers').textContent = allUsers.filter(u => u.role === 'OFFICER').length;
+    document.getElementById('statAdmins').textContent   = allUsers.filter(u => u.role === 'ADMIN').length;
+  }
+
+  // ─── FILTER + RENDER ─────────────────────────────────────
+  function applyFilters() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const role   = document.getElementById('roleFilter').value;
+
+    let filtered = allUsers.filter(u => {
+      const matchSearch = !search ||
+        u.username?.toLowerCase().includes(search) ||
+        u.email?.toLowerCase().includes(search);
+      const matchRole = !role || u.role === role;
+      return matchSearch && matchRole;
+    });
+
+    document.getElementById('totalCount').textContent =
+      `${filtered.length} of ${allUsers.length} users`;
+
+    renderTable(filtered);
+  }
+
+  // ─── RENDER TABLE ────────────────────────────────────────
+  function renderTable(users) {
+    const wrap = document.getElementById('tableBody');
+
+    if (users.length === 0) {
+      wrap.innerHTML = `<div class="empty">No users found.</div>`;
+      return;
+    }
+
+    let rows = users.map(u => `
+      <tr>
+        <td><code style="font-size:0.78rem;color:#6b7280;">#${u.id}</code></td>
+        <td style="font-weight:600;">${escHtml(u.username)}</td>
+        <td style="color:#6b7280;font-size:0.88rem;">${escHtml(u.email ?? '—')}</td>
+        <td style="color:#6b7280;font-size:0.88rem;">${escHtml(u.phone ?? '—')}</td>
+        <td><span class="role-badge role-${u.role}">${u.role}</span></td>
+        <td>
+          <button class="action-btn btn-edit" onclick="openEdit(${u.id})">Change Role</button>
+          ${u.username !== currentUser.username ?
+            `<button class="action-btn btn-delete" onclick="openDelete(${u.id})">Delete</button>` :
+            `<span style="font-size:0.78rem;color:#9ca3af;">You</span>`}
+        </td>
+      </tr>
+    `).join('');
+
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  // ─── EDIT ROLE MODAL ──────────────────────────────────────
+  function openEdit(id) {
+    const u = allUsers.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById('editId').value             = u.id;
+    document.getElementById('editUsername').textContent  = u.username;
+    document.getElementById('editEmail').textContent    = u.email ?? '—';
+    document.getElementById('editCurrentRole').innerHTML = `<span class="role-badge role-${u.role}">${u.role}</span>`;
+    document.getElementById('editRole').value            = u.role;
+    document.getElementById('editSaveBtn').disabled      = false;
+    openModal('editModal');
+  }
+
+  async function submitRoleChange() {
+    const id   = document.getElementById('editId').value;
+    const role = document.getElementById('editRole').value;
+
+    document.getElementById('editSaveBtn').disabled = true;
+    document.getElementById('editSaveBtn').textContent = 'Saving…';
+
+    try {
+      const res = await fetch(`${API}/api/admin/users/${id}/role`, {
+        method: 'PUT',
+        headers: authHeaders(),
+        body: JSON.stringify({ role })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `HTTP ${res.status}`);
+      }
+
+      const updated = await res.json();
+      const idx = allUsers.findIndex(u => u.id === parseInt(id));
+      if (idx !== -1) allUsers[idx] = updated;
+
+      closeModal('editModal');
+      updateStats();
+      applyFilters();
+      showToast(`Role updated to ${role}!`, 'success');
+    } catch (e) {
+      console.error('Update error:', e);
+      showToast(`Update failed: ${e.message}`, 'error');
+    } finally {
+      document.getElementById('editSaveBtn').disabled  = false;
+      document.getElementById('editSaveBtn').textContent = 'Save Changes';
+    }
+  }
+
+  // ─── DELETE MODAL ─────────────────────────────────────────
+  function openDelete(id) {
+    const u = allUsers.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById('deleteId').value             = u.id;
+    document.getElementById('deleteUsername').textContent  = u.username;
+    document.getElementById('deleteRole').innerHTML        = `<span class="role-badge role-${u.role}">${u.role}</span>`;
+    document.getElementById('deleteSaveBtn').disabled      = false;
+    openModal('deleteModal');
+  }
+
+  async function submitDelete() {
+    const id = document.getElementById('deleteId').value;
+
+    document.getElementById('deleteSaveBtn').disabled = true;
+    document.getElementById('deleteSaveBtn').textContent = 'Deleting…';
+
+    try {
+      const res = await fetch(`${API}/api/admin/users/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `HTTP ${res.status}`);
+      }
+
+      allUsers = allUsers.filter(u => u.id !== parseInt(id));
+      closeModal('deleteModal');
+      updateStats();
+      applyFilters();
+      showToast('User deleted successfully!', 'success');
+    } catch (e) {
+      console.error('Delete error:', e);
+      showToast(`Delete failed: ${e.message}`, 'error');
+    } finally {
+      document.getElementById('deleteSaveBtn').disabled  = false;
+      document.getElementById('deleteSaveBtn').textContent = 'Delete User';
+    }
+  }
+
+  // ─── MODAL HELPERS ───────────────────────────────────────
+  function openModal(id)  { document.getElementById(id).classList.add('active'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target === el) closeModal(el.id);
+    });
+  });
+
+  // ─── LOGOUT ──────────────────────────────────────────────
+  function logout() {
+    localStorage.removeItem('civicpulse_token');
+    localStorage.removeItem('civicpulse_user');
+    window.location.href = '/index.html';
+  }
+
+  // ─── HELPERS ─────────────────────────────────────────────
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ─── INIT ────────────────────────────────────────────────
+  loadUsers();
+</script>
+</body>
+</html>

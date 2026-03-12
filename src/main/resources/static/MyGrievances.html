@@ -3,1068 +3,362 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>CivicPulse – Submit Grievance</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap%22 rel="stylesheet">
-<style>
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-
-      --ink: #0d1117; --ink-soft: #4b5563; --surface: #f3f5f9; --panel: #ffffff;
-
-      --accent: #1a56db; --accent-hover: #1641b0; --accent-light: #e8effd;
-
-      --border: #e5e8f0; --citizen: #0ea5e9; --success: #10b981;
-
-      --sidebar-w: 260px;
-
-    }
-
-    html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); }
- 
-    /* LAYOUT */
-
-    .app { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
- 
-    /* SIDEBAR */
-
-    .sidebar {
-
-      background: var(--ink); display: flex; flex-direction: column;
-
-      position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh; overflow-y: auto;
-
-    }
-
-    .sidebar-logo { padding: 24px 20px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
-
-    .logo-icon { width: 34px; height: 34px; background: var(--accent); border-radius: 9px; display: flex; align-items: center; justify-content: center; }
-
-    .logo-icon svg { width: 18px; height: 18px; fill: white; }
-
-    .logo-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: white; }
-
-    .sidebar-role { margin: 16px 16px 8px; padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px; }
-
-    .role-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--citizen); flex-shrink: 0; }
-
-    .role-name-display { font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 0.06em; }
-
-    .role-username { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-top: 1px; }
-
-    .nav-section { padding: 20px 12px 8px; }
-
-    .nav-section-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.3); padding: 0 8px; margin-bottom: 6px; }
-
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; text-decoration: none; color: rgba(255,255,255,0.55); font-size: 0.88rem; font-weight: 500; transition: background 0.15s, color 0.15s; margin-bottom: 2px; }
-
-    .nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
-
-    .nav-item.active { background: var(--citizen); color: white; }
-
-    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
-
-    .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
-
-    .logout-btn { width: 100%; padding: 10px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; color: #f87171; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; transition: background 0.15s; }
-
-    .logout-btn:hover { background: rgba(239,68,68,0.22); }
- 
-    /* MAIN */
-
-    .main { margin-left: var(--sidebar-w); }
-
-    .topbar { background: var(--panel); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
-
-    .topbar h1 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.25rem; }
-
-    .topbar p { font-size: 0.82rem; color: var(--ink-soft); margin-top: 1px; }
-
-    .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--citizen); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.9rem; }
- 
-    /* CONTENT */
-
-    .content { padding: 32px; max-width: 760px; }
- 
-    /* FORM CARD */
-
-    .form-card { background: var(--panel); border: 1px solid var(--border); border-radius: 20px; padding: 36px; }
-
-    .form-card-header { margin-bottom: 28px; }
-
-    .form-card-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem; color: var(--ink); margin-bottom: 6px; }
-
-    .form-card-sub { font-size: 0.88rem; color: var(--ink-soft); }
- 
-    /* CATEGORY GRID */
-
-    .category-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
-
-    .cat-pill { padding: 12px 8px; border: 2px solid var(--border); border-radius: 12px; background: transparent; text-align: center; cursor: pointer; transition: all 0.18s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-
-    .cat-pill:hover { border-color: var(--citizen); background: rgba(14,165,233,0.05); }
-
-    .cat-pill.active { border-color: var(--citizen); background: rgba(14,165,233,0.1); }
-
-    .cat-emoji { font-size: 1.5rem; }
-
-    .cat-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); }
-
-    .cat-pill.active .cat-label { color: var(--accent); }
- 
-    /* FORM FIELDS */
-
-    .form-group { margin-bottom: 20px; }
-
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-    label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--ink); margin-bottom: 7px; }
-
-    .required { color: #ef4444; }
-
-    input[type="text"], textarea, select {
-
-      width: 100%; padding: 11px 14px; border: 2px solid var(--border); border-radius: 10px;
-
-      font-family: 'DM Sans', sans-serif; font-size: 0.92rem; color: var(--ink);
-
-      background: var(--surface); transition: border-color 0.18s, box-shadow 0.18s; outline: none; resize: vertical;
-
-    }
-
-    input[type="text"]:focus, textarea:focus { border-color: var(--accent); background: white; box-shadow: 0 0 0 3px var(--accent-light); }
-
-    input::placeholder, textarea::placeholder { color: #b0b7c3; }
-
-    textarea { min-height: 100px; }
- 
-    /* IMAGE UPLOAD */
-
-    .upload-zone {
-
-      border: 2px dashed var(--border); border-radius: 12px; padding: 24px;
-
-      text-align: center; cursor: pointer; transition: all 0.2s; background: var(--surface);
-
-      position: relative;
-
-    }
-
-    .upload-zone:hover { border-color: var(--citizen); background: rgba(14,165,233,0.03); }
-
-    .upload-zone.has-image { border-color: var(--success); background: rgba(16,185,129,0.03); }
-
-    .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-
-    .upload-icon { font-size: 2rem; margin-bottom: 8px; }
-
-    .upload-text { font-size: 0.85rem; color: var(--ink-soft); }
-
-    .upload-text strong { color: var(--accent); }
-
-    .preview-img { max-width: 100%; max-height: 180px; border-radius: 8px; margin-top: 12px; object-fit: cover; }
- 
-    /* LOCATION */
-
-    .location-row { display: flex; gap: 10px; }
-
-    .location-row input { flex: 1; }
-
-    .locate-btn { padding: 11px 16px; background: var(--accent-light); border: 2px solid var(--accent-light); border-radius: 10px; color: var(--accent); font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
-
-    .locate-btn:hover { background: #d1dffb; }
- 
-    /* SUBMIT */
-
-    .btn-submit { width: 100%; padding: 14px; background: var(--accent); color: white; border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background 0.18s, transform 0.1s, box-shadow 0.18s; margin-top: 8px; letter-spacing: 0.01em; }
-
-    .btn-submit:hover { background: var(--accent-hover); box-shadow: 0 4px 16px rgba(26,86,219,0.35); }
-
-    .btn-submit:active { transform: scale(0.98); }
-
-    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
- 
-    /* ALERT */
-
-    .alert { padding: 12px 16px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 20px; display: none; }
-
-    .alert.show { display: block; }
-
-    .alert.error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-
-    .alert.success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
- 
-    /* SPINNER */
-
-    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
- 
-    @media (max-width: 768px) {
-
-      .app { grid-template-columns: 1fr; }
-
-      .sidebar { display: none; }
-
-      .main { margin-left: 0; }
-
-      .category-grid { grid-template-columns: repeat(2, 1fr); }
-
-      .form-row { grid-template-columns: 1fr; }
-
-    }
-</style>
-</head>
-<body>
-<div class="app">
-<!-- SIDEBAR -->
-<nav class="sidebar">
-<div class="sidebar-logo">
-<div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
-<span class="logo-text">CivicPulse</span>
-</div>
-<div class="sidebar-role">
-<div class="role-dot"></div>
-<div>
-<div class="role-name-display">CITIZEN</div>
-<div class="role-username" id="sidebarUsername">@user</div>
-</div>
-</div>
-<div class="nav-section">
-<div class="nav-section-label">Main</div>
-<a class="nav-item" href="dashboard.html">
-<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Overview
-</a>
-<a class="nav-item active" href="submit.html">
-<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Submit Grievance
-</a>
-<a class="nav-item" href="mygrievances.html">
-<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>My Grievances
-</a>
-</div>
-<div class="sidebar-footer">
-<button class="logout-btn" onclick="logout()">⬡ Sign Out</button>
-</div>
-</nav>
- 
-  <!-- MAIN -->
-<div class="main">
-<div class="topbar">
-<div>
-<h1>Submit Grievance</h1>
-<p>Report a civic issue in your area</p>
-</div>
-<div class="avatar" id="userAvatar">C</div>
-</div>
- 
-    <div class="content">
-<div class="form-card">
-<div class="form-card-header">
-<div class="form-card-title">📋 New Complaint</div>
-<div class="form-card-sub">Fill in the details below. Fields marked <span style="color:#ef4444">*</span> are required.</div>
-</div>
- 
-        <div id="alert" class="alert"></div>
- 
-        <!-- CATEGORY -->
-<div class="form-group">
-<label>Select Category <span class="required">*</span></label>
-<div class="category-grid">
-<div class="cat-pill" data-cat="WATER" onclick="selectCat(this)">
-<span class="cat-emoji">💧</span><span class="cat-label">Water</span>
-</div>
-<div class="cat-pill" data-cat="STREET_LIGHT" onclick="selectCat(this)">
-<span class="cat-emoji">💡</span><span class="cat-label">Street Light</span>
-</div>
-<div class="cat-pill" data-cat="ROAD" onclick="selectCat(this)">
-<span class="cat-emoji">🛣️</span><span class="cat-label">Road</span>
-</div>
-<div class="cat-pill" data-cat="SANITATION" onclick="selectCat(this)">
-<span class="cat-emoji">🗑️</span><span class="cat-label">Sanitation</span>
-</div>
-<div class="cat-pill" data-cat="DRAINAGE" onclick="selectCat(this)">
-<span class="cat-emoji">🌊</span><span class="cat-label">Drainage</span>
-</div>
-<div class="cat-pill" data-cat="PARK" onclick="selectCat(this)">
-<span class="cat-emoji">🌳</span><span class="cat-label">Park</span>
-</div>
-<div class="cat-pill" data-cat="ELECTRICITY" onclick="selectCat(this)">
-<span class="cat-emoji">⚡</span><span class="cat-label">Electricity</span>
-</div>
-<div class="cat-pill" data-cat="OTHER" onclick="selectCat(this)">
-<span class="cat-emoji">📌</span><span class="cat-label">Other</span>
-</div>
-</div>
-</div>
- 
-        <!-- TITLE -->
-<div class="form-group">
-<label>Title <span class="required">*</span></label>
-<input type="text" id="title" placeholder="Brief title of the issue e.g. Water supply interrupted in Block C"/>
-</div>
- 
-        <!-- DESCRIPTION -->
-<div class="form-group">
-<label>Description <span class="required">*</span></label>
-<textarea id="description" placeholder="Describe the issue in detail. Include when it started, how it affects residents, etc."></textarea>
-</div>
- 
-        <!-- LOCATION -->
-<div class="form-group">
-<label>Location</label>
-<div class="location-row">
-<input type="text" id="location" placeholder="Street, area, landmark e.g. MG Road near Bus Stop"/>
-<button class="locate-btn" onclick="getLocation()">📍 Auto Detect</button>
-</div>
-</div>
- 
-        <!-- IMAGE UPLOAD -->
-<div class="form-group">
-<label>Attach Photo (optional)</label>
-<div class="upload-zone" id="uploadZone">
-<input type="file" id="imageInput" accept="image/*" onchange="handleImage(event)"/>
-<div class="upload-icon">📷</div>
-<div class="upload-text">Click to upload or drag & drop<br><strong>PNG, JPG, WEBP</strong> up to 2MB</div>
-<img id="previewImg" class="preview-img" style="display:none"/>
-</div>
-</div>
- 
-        <button class="btn-submit" id="submitBtn" onclick="handleSubmit()">
-
-          Submit Complaint →
-</button>
-</div>
-</div>
-</div>
-</div>
- 
-<script>
-
-  // Auth check
-
-  const token = localStorage.getItem('civicpulse_token');
-
-  const userStr = localStorage.getItem('civicpulse_user');
-
-  if (!token || !userStr) window.location.href = '/index.html';
-
-  const user = JSON.parse(userStr);
-
-  document.getElementById('sidebarUsername').textContent = '@' + user.username;
-
-  document.getElementById('userAvatar').textContent = user.username[0].toUpperCase();
- 
-  let selectedCategory = null;
-
-  let imageBase64 = null;
- 
-  function selectCat(el) {
-
-    document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-
-    el.classList.add('active');
-
-    selectedCategory = el.dataset.cat;
-
-  }
- 
-  function handleImage(e) {
-
-    const file = e.target.files[0];
-
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-
-      showAlert('Image must be under 2MB.', 'error');
-
-      return;
-
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = (ev) => {
-
-      imageBase64 = ev.target.result;
-
-      const img = document.getElementById('previewImg');
-
-      img.src = imageBase64;
-
-      img.style.display = 'block';
-
-      document.getElementById('uploadZone').classList.add('has-image');
-
-    };
-
-    reader.readAsDataURL(file);
-
-  }
- 
-  function getLocation() {
-
-    if (!navigator.geolocation) {
-
-      showAlert('Geolocation not supported by your browser.', 'error');
-
-      return;
-
-    }
-
-    const btn = document.querySelector('.locate-btn');
-
-    btn.textContent = '⏳ Detecting…';
-
-    navigator.geolocation.getCurrentPosition(
-
-      (pos) => {
-
-        const { latitude, longitude } = pos.coords;
-
-        document.getElementById('location').value = `Lat: ${latitude.toFixed(5)}, Lng: ${longitude.toFixed(5)}`;
-
-        btn.textContent = '📍 Auto Detect';
-
-      },
-
-      () => {
-
-        showAlert('Could not detect location. Please enter manually.', 'error');
-
-        btn.textContent = '📍 Auto Detect';
-
-      }
-
-    );
-
-  }
- 
-  function showAlert(msg, type) {
-
-    const el = document.getElementById('alert');
-
-    el.textContent = msg;
-
-    el.className = `alert ${type} show`;
-
-    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-  }
-
-  function hideAlert() { document.getElementById('alert').className = 'alert'; }
- 
-  async function handleSubmit() {
-
-    const title       = document.getElementById('title').value.trim();
-
-    const description = document.getElementById('description').value.trim();
-
-    const location    = document.getElementById('location').value.trim();
- 
-    if (!selectedCategory) { showAlert('Please select a category.', 'error'); return; }
-
-    if (!title)             { showAlert('Please enter a title.', 'error'); return; }
-
-    if (!description)       { showAlert('Please enter a description.', 'error'); return; }
- 
-    const btn = document.getElementById('submitBtn');
-
-    btn.disabled = true;
-
-    btn.innerHTML = '<span class="spinner"></span>Submitting…';
-
-    hideAlert();
- 
-    try {
-
-      const res = await fetch('/api/grievances/submit', {
-
-        method: 'POST',
-
-        headers: {
-
-          'Content-Type': 'application/json',
-
-          'Authorization': 'Bearer ' + token
-
-        },
-
-        body: JSON.stringify({ title, description, category: selectedCategory, location, imageBase64 })
-
-      });
- 
-      const data = await res.json();
-
-      if (!res.ok) { showAlert(data.error || 'Submission failed.', 'error'); return; }
- 
-      showAlert(`✓ Grievance #${data.id} submitted successfully! Redirecting to your complaints…`, 'success');
-
-      setTimeout(() => { window.location.href = '/mygrievances.html'; }, 1500);
- 
-    } catch (err) {
-
-      showAlert('Server unreachable.', 'error');
-
-    } finally {
-
-      btn.disabled = false;
-
-      btn.innerHTML = 'Submit Complaint →';
-
-    }
-
-  }
- 
-  function logout() {
-
-    localStorage.clear();
-
-    window.location.href = '/index.html';
-
-  }
-</script>
-</body>
-</html>
-
- submit .html 
- 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>CivicPulse – My Grievances</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap%22 rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-
-      --ink: #0d1117; --ink-soft: #4b5563; --surface: #f3f5f9; --panel: #ffffff;
-
-      --accent: #1a56db; --border: #e5e8f0; --citizen: #0ea5e9;
-
-      --pending: #f59e0b; --progress: #3b82f6; --resolved: #10b981; --closed: #6b7280;
-
-      --sidebar-w: 260px;
-
-    }
-
-    html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); }
-
-    .app { display: grid; grid-template-columns: var(--sidebar-w) 1fr; min-height: 100vh; }
- 
-    /* SIDEBAR - same as submit.html */
-
-    .sidebar { background: var(--ink); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; width: var(--sidebar-w); height: 100vh; overflow-y: auto; }
-
-    .sidebar-logo { padding: 24px 20px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
-
-    .logo-icon { width: 34px; height: 34px; background: var(--accent); border-radius: 9px; display: flex; align-items: center; justify-content: center; }
-
-    .logo-icon svg { width: 18px; height: 18px; fill: white; }
-
-    .logo-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: white; }
-
-    .sidebar-role { margin: 16px 16px 8px; padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px; }
-
-    .role-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--citizen); flex-shrink: 0; }
-
-    .role-name-display { font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 0.06em; }
-
-    .role-username { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-top: 1px; }
-
-    .nav-section { padding: 20px 12px 8px; }
-
-    .nav-section-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.3); padding: 0 8px; margin-bottom: 6px; }
-
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; text-decoration: none; color: rgba(255,255,255,0.55); font-size: 0.88rem; font-weight: 500; transition: background 0.15s, color 0.15s; margin-bottom: 2px; }
-
-    .nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
-
-    .nav-item.active { background: var(--citizen); color: white; }
-
-    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
-
-    .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
-
-    .logout-btn { width: 100%; padding: 10px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; color: #f87171; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; }
- 
-    /* MAIN */
-
-    .main { margin-left: var(--sidebar-w); }
-
-    .topbar { background: var(--panel); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
-
-    .topbar h1 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.25rem; }
-
-    .topbar p { font-size: 0.82rem; color: var(--ink-soft); margin-top: 1px; }
-
-    .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--citizen); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.9rem; }
-
-    .content { padding: 32px; }
- 
-    /* FILTER BAR */
-
-    .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
-
-    .filter-btn { padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--panel); font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.15s; color: var(--ink-soft); }
-
-    .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
-
-    .new-btn { margin-left: auto; padding: 9px 18px; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: background 0.15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-
-    .new-btn:hover { background: #1641b0; }
- 
-    /* STATS ROW */
-
-    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
-
-    .stat-mini { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
-
-    .stat-mini-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.6rem; }
-
-    .stat-mini-label { font-size: 0.75rem; color: var(--ink-soft); margin-top: 2px; }
- 
-    /* GRIEVANCE CARDS */
-
-    .grievance-list { display: flex; flex-direction: column; gap: 14px; }
- 
-    .g-card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; cursor: pointer; transition: box-shadow 0.2s, border-color 0.2s; }
-
-    .g-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); border-color: #d0d7e8; }
-
-    .g-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
-
-    .g-card-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
-
-    .g-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
-
-    .g-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--ink); margin-bottom: 4px; }
-
-    .g-meta { font-size: 0.78rem; color: var(--ink-soft); display: flex; gap: 12px; flex-wrap: wrap; }
-
-    .g-meta span { display: flex; align-items: center; gap: 4px; }
- 
-    .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
-
-    .status-PENDING    { background: #fef3c7; color: #92400e; }
-
-    .status-IN_PROGRESS{ background: #dbeafe; color: #1e40af; }
-
-    .status-RESOLVED   { background: #d1fae5; color: #065f46; }
-
-    .status-CLOSED     { background: #f3f4f6; color: #374151; }
- 
-    /* PROGRESS TRACKER */
-
-    .progress-track { display: flex; align-items: center; gap: 0; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
-
-    .track-step { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 4px; }
-
-    .track-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: #b0b7c3; transition: all 0.2s; }
-
-    .track-dot.done { background: var(--resolved); border-color: var(--resolved); color: white; }
-
-    .track-dot.active { background: var(--progress); border-color: var(--progress); color: white; }
-
-    .track-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: #b0b7c3; font-weight: 600; }
-
-    .track-label.done, .track-label.active { color: var(--ink); }
-
-    .track-line { flex: 1; height: 2px; background: var(--border); margin: 0 -1px; margin-bottom: 18px; }
-
-    .track-line.done { background: var(--resolved); }
- 
-    /* DETAIL MODAL */
-
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
-
-    .modal-overlay.show { display: flex; }
-
-    .modal { background: var(--panel); border-radius: 20px; width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto; }
-
-    .modal-header { padding: 24px 28px 0; display: flex; justify-content: space-between; align-items: center; }
-
-    .modal-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; }
-
-    .modal-close { width: 32px; height: 32px; border: none; background: var(--surface); border-radius: 8px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
-
-    .modal-body { padding: 20px 28px 28px; }
-
-    .modal-field { margin-bottom: 16px; }
-
-    .modal-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); font-weight: 600; margin-bottom: 4px; }
-
-    .modal-value { font-size: 0.92rem; color: var(--ink); line-height: 1.5; }
-
-    .modal-img { width: 100%; border-radius: 12px; margin-top: 8px; max-height: 200px; object-fit: cover; }
- 
-    /* EMPTY STATE */
-
-    .empty { text-align: center; padding: 60px 20px; }
-
-    .empty-icon { font-size: 3.5rem; margin-bottom: 16px; }
-
-    .empty-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; }
-
-    .empty-sub { font-size: 0.88rem; color: var(--ink-soft); margin-bottom: 20px; }
- 
-    /* LOADING */
-
-    .loading { text-align: center; padding: 40px; color: var(--ink-soft); }
- 
-    @media (max-width: 768px) {
-
-      .app { grid-template-columns: 1fr; }
-
-      .sidebar { display: none; }
-
-      .main { margin-left: 0; }
-
-      .stats-row { grid-template-columns: repeat(2, 1fr); }
-
-    }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0d1117;
+    --ink-soft: #4b5563;
+    --surface: #f3f5f9;
+    --panel: #ffffff;
+    --accent: #1a56db;
+    --border: #e5e8f0;
+    --citizen: #0ea5e9;
+    --resolved: #10b981;
+    --progress: #3b82f6;
+    --pending: #f59e0b;
+    --sidebar-w: 260px;
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--surface);
+    color: var(--ink);
+  }
+
+  .app { min-height: 100vh; width: 100%; }
+
+  .sidebar {
+    background: var(--ink);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 100;
+  }
+
+  .sidebar-logo { padding: 24px 20px 20px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .logo-icon { width: 34px; height: 34px; background: var(--accent); border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+  .logo-icon svg { width: 18px; height: 18px; fill: white; }
+  .logo-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: white; }
+  .sidebar-role { margin: 16px 16px 8px; padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px; }
+  .role-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--citizen); }
+  .role-name-display { font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 0.06em; }
+  .role-username { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-top: 1px; }
+  .nav-section { padding: 20px 12px 8px; }
+  .nav-section-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.3); padding: 0 8px; margin-bottom: 6px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; text-decoration: none; color: rgba(255,255,255,0.55); font-size: 0.88rem; font-weight: 500; transition: background 0.15s, color 0.15s; margin-bottom: 2px; }
+  .nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+  .nav-item.active { background: var(--citizen); color: white; }
+  .nav-item svg { width: 18px; height: 18px; }
+  .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .logout-btn { width: 100%; padding: 10px; background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.2); border-radius: 10px; color: #f87171; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; cursor: pointer; }
+
+  .main {
+    margin-left: var(--sidebar-w);
+    width: calc(100% - var(--sidebar-w));
+    min-height: 100vh;
+  }
+
+  .topbar { background: var(--panel); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .topbar h1 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.25rem; }
+  .topbar p { font-size: 0.82rem; color: var(--ink-soft); margin-top: 1px; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--citizen); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.9rem; }
+
+  .content { padding: 32px; width: 100%; max-width: 1200px; }
+
+  .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+  .filter-btn { padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--panel); font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600; cursor: pointer; color: var(--ink-soft); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+  .new-btn { margin-left: auto; padding: 9px 18px; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 0.85rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .stat-mini { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; }
+  .stat-mini-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.6rem; }
+  .stat-mini-label { font-size: 0.75rem; color: var(--ink-soft); margin-top: 2px; }
+
+  .grievance-list { display: flex; flex-direction: column; gap: 14px; }
+  .g-card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 20px 24px; cursor: pointer; transition: box-shadow 0.2s; }
+  .g-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+  .g-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 10px; }
+  .g-card-left { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+  .g-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+  .g-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+  .g-meta { font-size: 0.78rem; color: var(--ink-soft); display: flex; gap: 12px; flex-wrap: wrap; }
+  .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+  .status-PENDING { background: #fef3c7; color: #92400e; }
+  .status-IN_PROGRESS { background: #dbeafe; color: #1e40af; }
+  .status-RESOLVED { background: #d1fae5; color: #065f46; }
+  .status-CLOSED { background: #f3f4f6; color: #374151; }
+
+  .progress-track { display: flex; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .track-step { display: flex; flex-direction: column; align-items: center; flex: 1; gap: 4px; }
+  .track-dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: #b0b7c3; }
+  .track-dot.done { background: var(--resolved); border-color: var(--resolved); color: white; }
+  .track-dot.active { background: var(--progress); border-color: var(--progress); color: white; }
+  .track-label { font-size: 0.65rem; text-transform: uppercase; color: #b0b7c3; font-weight: 600; }
+  .track-label.done, .track-label.active { color: var(--ink); }
+  .track-line { flex: 1; height: 2px; background: var(--border); margin: 0 -1px 18px; }
+  .track-line.done { background: var(--resolved); }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--panel); border-radius: 20px; width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto; }
+  .modal-header { padding: 24px 28px 0; display: flex; justify-content: space-between; align-items: center; }
+  .modal-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; }
+  .modal-close { width: 32px; height: 32px; border: none; background: var(--surface); border-radius: 8px; cursor: pointer; }
+  .modal-body { padding: 20px 28px 28px; }
+  .modal-field { margin-bottom: 16px; }
+  .modal-label { font-size: 0.75rem; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; margin-bottom: 4px; }
+  .modal-value { font-size: 0.92rem; line-height: 1.5; }
+  .modal-img { width: 100%; border-radius: 12px; margin-top: 8px; max-height: 200px; object-fit: cover; }
+
+  .empty { text-align: center; padding: 60px 20px; }
+  .empty-icon { font-size: 3.5rem; margin-bottom: 16px; }
+  .empty-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; margin-bottom: 8px; }
+  .empty-sub { font-size: 0.88rem; color: var(--ink-soft); margin-bottom: 20px; }
+  .loading { text-align: center; padding: 40px; color: var(--ink-soft); }
+
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; width: 100%; }
+    .content { padding: 20px; }
+  }
 </style>
 </head>
 <body>
 <div class="app">
-<!-- SIDEBAR -->
 <nav class="sidebar">
-<div class="sidebar-logo">
-<div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
-<span class="logo-text">CivicPulse</span>
-</div>
-<div class="sidebar-role">
-<div class="role-dot"></div>
-<div>
-<div class="role-name-display">CITIZEN</div>
-<div class="role-username" id="sidebarUsername">@user</div>
-</div>
-</div>
-<div class="nav-section">
-<div class="nav-section-label">Main</div>
-<a class="nav-item" href="dashboard.html">
-<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Overview
-</a>
-<a class="nav-item" href="submit.html">
-<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Submit Grievance
-</a>
-<a class="nav-item active" href="mygrievances.html">
-<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>My Grievances
-</a>
-</div>
-<div class="sidebar-footer">
-<button class="logout-btn" onclick="logout()">⬡ Sign Out</button>
-</div>
-</nav>
- 
-  <!-- MAIN -->
-<div class="main">
-<div class="topbar">
-<div>
-<h1>My Grievances</h1>
-<p>Track the status of all your submitted complaints</p>
-</div>
-<div class="avatar" id="userAvatar">C</div>
-</div>
- 
-    <div class="content">
- 
-      <!-- STATS -->
-<div class="stats-row">
-<div class="stat-mini">
-<div class="stat-mini-num" id="statTotal" style="color:var(--ink)">0</div>
-<div class="stat-mini-label">Total Submitted</div>
-</div>
-<div class="stat-mini">
-<div class="stat-mini-num" id="statPending" style="color:var(--pending)">0</div>
-<div class="stat-mini-label">Pending</div>
-</div>
-<div class="stat-mini">
-<div class="stat-mini-num" id="statProgress" style="color:var(--progress)">0</div>
-<div class="stat-mini-label">In Progress</div>
-</div>
-<div class="stat-mini">
-<div class="stat-mini-num" id="statResolved" style="color:var(--resolved)">0</div>
-<div class="stat-mini-label">Resolved</div>
-</div>
-</div>
- 
-      <!-- FILTER + NEW -->
-<div class="filter-bar">
-<button class="filter-btn active" data-filter="ALL" onclick="applyFilter(this)">All</button>
-<button class="filter-btn" data-filter="PENDING" onclick="applyFilter(this)">⏳ Pending</button>
-<button class="filter-btn" data-filter="IN_PROGRESS" onclick="applyFilter(this)">⚙️ In Progress</button>
-<button class="filter-btn" data-filter="RESOLVED" onclick="applyFilter(this)">✅ Resolved</button>
-<a class="new-btn" href="submit.html">＋ New Complaint</a>
-</div>
- 
-      <!-- LIST -->
-<div id="grievanceList" class="grievance-list">
-<div class="loading">Loading your grievances…</div>
-</div>
- 
+  <div class="sidebar-logo">
+    <div class="logo-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+    <span class="logo-text">CivicPulse</span>
+  </div>
+  <div class="sidebar-role">
+    <div class="role-dot"></div>
+    <div>
+      <div class="role-name-display">CITIZEN</div>
+      <div class="role-username" id="sidebarUsername">@user</div>
     </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Main</div>
+    <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Overview</a>
+    <a class="nav-item" href="submit.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Submit Grievance</a>
+    <a class="nav-item active" href="mygrievances.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>My Grievances</a>
+  </div>
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="logout()">⬡ Sign Out</button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h1>My Grievances</h1>
+      <p>Track the status of all your submitted complaints</p>
+    </div>
+    <div class="avatar" id="userAvatar">C</div>
+  </div>
+
+  <div class="content">
+    <div class="stats-row">
+      <div class="stat-mini"><div class="stat-mini-num" id="statTotal" style="color:var(--ink)">0</div><div class="stat-mini-label">Total Submitted</div></div>
+      <div class="stat-mini"><div class="stat-mini-num" id="statPending" style="color:var(--pending)">0</div><div class="stat-mini-label">Pending</div></div>
+      <div class="stat-mini"><div class="stat-mini-num" id="statProgress" style="color:var(--progress)">0</div><div class="stat-mini-label">In Progress</div></div>
+      <div class="stat-mini"><div class="stat-mini-num" id="statResolved" style="color:var(--resolved)">0</div><div class="stat-mini-label">Resolved</div></div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="ALL" onclick="applyFilter(this)">All</button>
+      <button class="filter-btn" data-filter="PENDING" onclick="applyFilter(this)">⏳ Pending</button>
+      <button class="filter-btn" data-filter="IN_PROGRESS" onclick="applyFilter(this)">⚙️ In Progress</button>
+      <button class="filter-btn" data-filter="RESOLVED" onclick="applyFilter(this)">✅ Resolved</button>
+      <a class="new-btn" href="submit.html">＋ New Complaint</a>
+    </div>
+
+    <div id="grievanceList" class="grievance-list">
+      <div class="loading">Loading your grievances…</div>
+    </div>
+  </div>
 </div>
 </div>
- 
-<!-- DETAIL MODAL -->
+
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
-<div class="modal" id="modal">
-<div class="modal-header">
-<div class="modal-title" id="modalTitle">Grievance Details</div>
-<button class="modal-close" onclick="closeModalDirect()">✕</button>
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Grievance Details</div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
 </div>
-<div class="modal-body" id="modalBody"></div>
-</div>
-</div>
- 
+
 <script>
-
-  const token   = localStorage.getItem('civicpulse_token');
-
+  const token = localStorage.getItem('civicpulse_token');
   const userStr = localStorage.getItem('civicpulse_user');
 
   if (!token || !userStr) window.location.href = '/index.html';
 
   const user = JSON.parse(userStr);
-
   document.getElementById('sidebarUsername').textContent = '@' + user.username;
-
   document.getElementById('userAvatar').textContent = user.username[0].toUpperCase();
- 
+
   let allGrievances = [];
-
   let currentFilter = 'ALL';
- 
+
   const CAT_ICONS = {
-
-    WATER:'💧', STREET_LIGHT:'💡', ROAD:'🛣️', SANITATION:'🗑️',
-
-    DRAINAGE:'🌊', PARK:'🌳', ELECTRICITY:'⚡', OTHER:'📌'
-
+    WATER: '💧', STREET_LIGHT: '💡', ROAD: '🛣️', SANITATION: '🗑️',
+    DRAINAGE: '🌊', PARK: '🌳', ELECTRICITY: '⚡', OTHER: '📌'
   };
 
   const CAT_BG = {
-
-    WATER:'#dbeafe', STREET_LIGHT:'#fef3c7', ROAD:'#fee2e2',
-
-    SANITATION:'#fef3c7', DRAINAGE:'#e0f2fe', PARK:'#d1fae5',
-
-    ELECTRICITY:'#fef9c3', OTHER:'#f3f4f6'
-
+    WATER: '#dbeafe', STREET_LIGHT: '#fef3c7', ROAD: '#fee2e2', SANITATION: '#fef3c7',
+    DRAINAGE: '#e0f2fe', PARK: '#d1fae5', ELECTRICITY: '#fef9c3', OTHER: '#f3f4f6'
   };
- 
-  // Load grievances
 
   async function loadGrievances() {
-
     try {
-
       const res = await fetch('/api/grievances/my', {
-
-        headers: { 'Authorization': 'Bearer ' + token }
-
+        headers: { Authorization: 'Bearer ' + token }
       });
 
       if (!res.ok) throw new Error('Failed');
 
       allGrievances = await res.json();
-
       updateStats();
-
       renderList();
-
-    } catch (err) {
-
+    } catch (error) {
       document.getElementById('grievanceList').innerHTML =
-
         '<div class="loading">Could not load grievances. Is the server running?</div>';
-
     }
-
   }
- 
+
   function updateStats() {
-
-    document.getElementById('statTotal').textContent    = allGrievances.length;
-
-    document.getElementById('statPending').textContent  = allGrievances.filter(g => g.status === 'PENDING').length;
-
+    document.getElementById('statTotal').textContent = allGrievances.length;
+    document.getElementById('statPending').textContent = allGrievances.filter(g => g.status === 'PENDING').length;
     document.getElementById('statProgress').textContent = allGrievances.filter(g => g.status === 'IN_PROGRESS').length;
-
     document.getElementById('statResolved').textContent = allGrievances.filter(g => g.status === 'RESOLVED').length;
-
   }
- 
+
   function applyFilter(btn) {
-
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-
     btn.classList.add('active');
-
     currentFilter = btn.dataset.filter;
-
     renderList();
-
   }
- 
+
   function renderList() {
-
     const filtered = currentFilter === 'ALL'
-
       ? allGrievances
-
       : allGrievances.filter(g => g.status === currentFilter);
- 
+
     const container = document.getElementById('grievanceList');
- 
+
     if (filtered.length === 0) {
-
       container.innerHTML = `
-<div class="empty">
-<div class="empty-icon">📭</div>
-<div class="empty-title">${currentFilter === 'ALL' ? 'No grievances yet' : 'No ' + currentFilter.toLowerCase() + ' grievances'}</div>
-<div class="empty-sub">${currentFilter === 'ALL' ? 'Submit your first complaint to get started.' : 'All your grievances in this category will appear here.'}</div>
-<a href="submit.html" class="new-btn" style="display:inline-flex;margin:0 auto">＋ Submit First Complaint</a>
-</div>`;
-
+        <div class="empty">
+          <div class="empty-icon">📭</div>
+          <div class="empty-title">${currentFilter === 'ALL' ? 'No grievances yet' : 'No ' + currentFilter.toLowerCase() + ' grievances'}</div>
+          <div class="empty-sub">${currentFilter === 'ALL' ? 'Submit your first complaint to get started.' : 'All your grievances in this category will appear here.'}</div>
+          <a href="submit.html" class="new-btn" style="display:inline-flex;margin:0 auto">＋ Submit First Complaint</a>
+        </div>`;
       return;
-
     }
- 
+
     container.innerHTML = filtered.map(g => {
-
       const icon = CAT_ICONS[g.category] || '📌';
-
-      const bg   = CAT_BG[g.category]   || '#f3f4f6';
-
-      const date = new Date(g.submittedAt).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
- 
-      // Progress steps
+      const bg = CAT_BG[g.category] || '#f3f4f6';
+      const date = new Date(g.submittedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
       const steps = ['PENDING', 'IN_PROGRESS', 'RESOLVED'];
-
       const currentStep = steps.indexOf(g.status);
- 
+
       const stepsHtml = steps.map((s, i) => {
-
-        const isDone   = i < currentStep || g.status === 'RESOLVED';
-
+        const isDone = i < currentStep || g.status === 'RESOLVED';
         const isActive = i === currentStep && g.status !== 'RESOLVED';
-
         const dotClass = isDone ? 'done' : isActive ? 'active' : '';
-
-        const lblClass = dotClass;
-
-        const labels   = { PENDING:'Pending', IN_PROGRESS:'In Progress', RESOLVED:'Resolved' };
-
-        const lineHtml = i < steps.length - 1
-
-          ? `<div class="track-line ${i < currentStep || g.status === 'RESOLVED' ? 'done' : ''}"></div>`
-
-          : '';
+        const labels = { PENDING: 'Pending', IN_PROGRESS: 'In Progress', RESOLVED: 'Resolved' };
+        const lineHtml = i < steps.length - 1 ? `<div class="track-line ${i < currentStep || g.status === 'RESOLVED' ? 'done' : ''}"></div>` : '';
 
         return `
-<div class="track-step">
-<div class="track-dot ${dotClass}">${isDone ? '✓' : i + 1}</div>
-<div class="track-label ${lblClass}">${labels[s]}</div>
-</div>
-
+          <div class="track-step">
+            <div class="track-dot ${dotClass}">${isDone ? '✓' : i + 1}</div>
+            <div class="track-label ${dotClass}">${labels[s]}</div>
+          </div>
           ${lineHtml}`;
-
       }).join('');
- 
+
       return `
-<div class="g-card" onclick="openModal(${g.id})">
-<div class="g-card-header">
-<div class="g-card-left">
-<div class="g-icon" style="background:${bg}">${icon}</div>
-<div>
-<div class="g-title">${g.title}</div>
-<div class="g-meta">
-<span>🏷️ ${g.category.replace('_',' ')}</span>
-<span>📅 ${date}</span>
-
+        <div class="g-card" onclick="openModal(${g.id})">
+          <div class="g-card-header">
+            <div class="g-card-left">
+              <div class="g-icon" style="background:${bg}">${icon}</div>
+              <div>
+                <div class="g-title">${g.title}</div>
+                <div class="g-meta">
+                  <span>🏷️ ${g.category.replace('_', ' ')}</span>
+                  <span>📅 ${date}</span>
                   ${g.location ? `<span>📍 ${g.location}</span>` : ''}
-<span>#${g.id}</span>
-</div>
-</div>
-</div>
-<span class="status-badge status-${g.status}">${g.status.replace('_',' ')}</span>
-</div>
-<div class="progress-track">${stepsHtml}</div>
-</div>`;
-
+                  <span>#${g.id}</span>
+                </div>
+              </div>
+            </div>
+            <span class="status-badge status-${g.status}">${g.status.replace('_', ' ')}</span>
+          </div>
+          <div class="progress-track">${stepsHtml}</div>
+        </div>`;
     }).join('');
-
   }
- 
+
   function openModal(id) {
-
     const g = allGrievances.find(x => x.id === id);
-
     if (!g) return;
- 
-    const date = new Date(g.submittedAt).toLocaleString('en-IN');
 
+    const date = new Date(g.submittedAt).toLocaleString('en-IN');
     document.getElementById('modalTitle').textContent = `#${g.id} — ${g.title}`;
 
     document.getElementById('modalBody').innerHTML = `
-<div style="margin-bottom:16px">
-<span class="status-badge status-${g.status}" style="font-size:0.8rem">${g.status.replace('_',' ')}</span>
-</div>
-<div class="modal-field">
-<div class="modal-label">Category</div>
-<div class="modal-value">${CAT_ICONS[g.category]} ${g.category.replace('_',' ')}</div>
-</div>
-<div class="modal-field">
-<div class="modal-label">Description</div>
-<div class="modal-value">${g.description}</div>
-</div>
-
+      <div style="margin-bottom:16px">
+        <span class="status-badge status-${g.status}" style="font-size:0.8rem">${g.status.replace('_', ' ')}</span>
+      </div>
+      <div class="modal-field"><div class="modal-label">Category</div><div class="modal-value">${CAT_ICONS[g.category]} ${g.category.replace('_', ' ')}</div></div>
+      <div class="modal-field"><div class="modal-label">Description</div><div class="modal-value">${g.description}</div></div>
       ${g.location ? `<div class="modal-field"><div class="modal-label">Location</div><div class="modal-value">📍 ${g.location}</div></div>` : ''}
-<div class="modal-field">
-<div class="modal-label">Submitted On</div>
-<div class="modal-value">${date}</div>
-</div>
-
+      <div class="modal-field"><div class="modal-label">Submitted On</div><div class="modal-value">${date}</div></div>
       ${g.assignedOfficer ? `<div class="modal-field"><div class="modal-label">Assigned Officer</div><div class="modal-value">👷 ${g.assignedOfficer}</div></div>` : ''}
-
       ${g.remarks ? `<div class="modal-field"><div class="modal-label">Remarks</div><div class="modal-value">${g.remarks}</div></div>` : ''}
-
       ${g.imageBase64 ? `<div class="modal-field"><div class="modal-label">Attached Photo</div><img class="modal-img" src="${g.imageBase64}"/></div>` : ''}
-
     `;
 
     document.getElementById('modalOverlay').classList.add('show');
-
   }
- 
+
   function closeModal(e) {
-
     if (e.target === document.getElementById('modalOverlay')) closeModalDirect();
-
   }
 
   function closeModalDirect() {
-
     document.getElementById('modalOverlay').classList.remove('show');
-
   }
- 
-  function logout() { localStorage.clear(); window.location.href = '/index.html'; }
- 
+
+  function logout() {
+    localStorage.removeItem('civicpulse_token');
+    localStorage.removeItem('civicpulse_user');
+    window.location.href = '/index.html';
+  }
+
   loadGrievances();
 </script>
 </body>
 </html>
-
-
-file. Sizenavigator. Geolocationreader. Onloaddata. Errorvalue. Trimzone. Hasvalue. Trimvalue. Trimdisplay: noneuser. Usernameuser. Username 

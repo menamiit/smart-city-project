@@ -20,4 +20,7 @@ public class GrievanceResponse {
     private LocalDateTime updatedAt;
     private String assignedOfficer;
     private String remarks;
+    private String adminNotes;
+    private String priority;
+    private String department;
 }

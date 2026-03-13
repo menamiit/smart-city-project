@@ -57,17 +57,33 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authorizeHttpRequests(auth -> auth
-                // ── All HTML pages and static assets ──────────────────────
+                // Static frontend pages do client-side role checks after login.
                 .requestMatchers(
                     "/",
                     "/index.html",
+                    "/dashboard.html",
                     "/Dashboard.html",
+                    "/submit.html",
                     "/Submit.html",
+                    "/mygrievances.html",
                     "/MyGrievances.html",
                     "/admin.html",
+                    "/admingrievances.html",
                     "/AdminGrievances.html",
+                    "/manageusers.html",
                     "/ManageUsers.html",
+                    "/assignofficers.html",
                     "/AssignOfficers.html",
+                    "/officerassignedtasks.html",
+                    "/OfficerAssignedTasks.html",
+                    "/officerinprogress.html",
+                    "/OfficerInProgress.html",
+                    "/officercompleted.html",
+                    "/OfficerCompleted.html",
+                    "/officerprofile.html",
+                    "/OfficerProfile.html",
+                    "/officer-pages.css",
+                    "/officer-common.js",
                     "/dashboard",
                     "/submit",
                     "/mygrievances",

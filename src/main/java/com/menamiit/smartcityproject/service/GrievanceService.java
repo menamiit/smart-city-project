@@ -3,6 +3,7 @@ package com.menamiit.smartcityproject.service;
 import com.menamiit.smartcityproject.dto.GrievanceRequest;
 import com.menamiit.smartcityproject.dto.GrievanceResponse;
 import com.menamiit.smartcityproject.dto.AdminAssignRequest;
+import com.menamiit.smartcityproject.dto.UserResponse;
 import com.menamiit.smartcityproject.model.Grievance;
 import com.menamiit.smartcityproject.model.User;
 import com.menamiit.smartcityproject.repository.GrievanceRepository;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
  
 @Service
@@ -95,6 +97,61 @@ public class GrievanceService {
         String normalized = status == null ? "" : status.toUpperCase();
         return grievanceRepository.findByStatusOrderBySubmittedAtDesc(normalized)
             .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    public List<GrievanceResponse> getOfficerTasks(String token) {
+        String username = requireOfficerUsername(token);
+        return grievanceRepository.findByAssignedOfficerOrderBySubmittedAtDesc(username)
+            .stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    public List<GrievanceResponse> getOfficerTasksByStatuses(String token, Set<String> statuses) {
+        Set<String> normalizedStatuses = statuses.stream()
+            .map(String::toUpperCase)
+            .collect(Collectors.toSet());
+
+        return getOfficerTasks(token).stream()
+            .filter(g -> normalizedStatuses.contains(g.getStatus()))
+            .collect(Collectors.toList());
+    }
+
+    public Map<String, Long> getOfficerStats(String token) {
+        List<GrievanceResponse> assigned = getOfficerTasks(token);
+        Map<String, Long> stats = new HashMap<>();
+        stats.put("assigned", (long) assigned.size());
+        stats.put("inProgress", assigned.stream().filter(g -> "IN_PROGRESS".equals(g.getStatus())).count());
+        stats.put("completed", assigned.stream().filter(g -> "RESOLVED".equals(g.getStatus()) || "CLOSED".equals(g.getStatus())).count());
+        stats.put("pending", assigned.stream().filter(g -> "PENDING".equals(g.getStatus())).count());
+        return stats;
+    }
+
+    public UserResponse getOfficerProfile(String token) {
+        String username = requireOfficerUsername(token);
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new IllegalArgumentException("User not found."));
+        return new UserResponse(user.getId(), user.getUsername(), user.getRole(), user.getEmail(), user.getPhone());
+    }
+
+    public GrievanceResponse updateOfficerTaskStatus(Long id, String status, String remarks, String token) {
+        String username = requireOfficerUsername(token);
+
+        Grievance grievance = grievanceRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Grievance not found."));
+
+        if (!username.equals(grievance.getAssignedOfficer())) {
+            throw new IllegalArgumentException("Access denied.");
+        }
+
+        if (status != null && !status.isBlank()) {
+            grievance.setStatus(status.toUpperCase());
+        }
+        if (remarks != null) {
+            grievance.setRemarks(remarks);
+        }
+        grievance.setUpdatedAt(LocalDateTime.now());
+
+        grievanceRepository.save(grievance);
+        return toResponse(grievance);
     }
 
     // ── Admin assigns grievance to officer ───────────────────────────────────
@@ -200,6 +257,14 @@ public class GrievanceService {
         stats.put("resolved",   all.stream().filter(g -> "RESOLVED".equals(g.getStatus())).count());
         stats.put("closed",     all.stream().filter(g -> "CLOSED".equals(g.getStatus())).count());
         return stats;
+    }
+
+    private String requireOfficerUsername(String token) {
+        String role = jwtUtil.getRoleFromToken(token);
+        if (!"OFFICER".equals(role)) {
+            throw new IllegalArgumentException("Access denied.");
+        }
+        return jwtUtil.getUsernameFromToken(token);
     }
  
     // ── Map entity to response ────────────────────────────────────────────────

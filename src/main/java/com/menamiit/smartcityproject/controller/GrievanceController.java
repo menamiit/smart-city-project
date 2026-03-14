@@ -1,7 +1,9 @@
 package com.menamiit.smartcityproject.controller;
   
 import com.menamiit.smartcityproject.dto.AdminAssignRequest;
+import com.menamiit.smartcityproject.dto.GrievanceFeedbackRequest;
 import com.menamiit.smartcityproject.dto.GrievanceRequest;
+import com.menamiit.smartcityproject.dto.GrievanceReopenRequest;
 import com.menamiit.smartcityproject.dto.GrievanceResponse;
 import com.menamiit.smartcityproject.service.GrievanceService;
  
@@ -57,8 +59,7 @@ public class GrievanceController {
     public ResponseEntity<?> getAll(
             @RequestHeader("Authorization") String authHeader) {
         try {
-            extractToken(authHeader);
-            List<GrievanceResponse> list = grievanceService.getAll();
+            List<GrievanceResponse> list = grievanceService.getAll(extractToken(authHeader));
             return ResponseEntity.ok(list);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
@@ -71,8 +72,44 @@ public class GrievanceController {
             @RequestParam String status,
             @RequestHeader("Authorization") String authHeader) {
         try {
-            extractToken(authHeader);
-            return ResponseEntity.ok(grievanceService.getByStatus(status));
+            return ResponseEntity.ok(grievanceService.getByStatus(status, extractToken(authHeader)));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ── POST /api/grievances/{id}/feedback (CITIZEN only) ───────────────────
+    @PostMapping("/{id}/feedback")
+    public ResponseEntity<?> submitFeedback(
+            @PathVariable Long id,
+            @RequestBody GrievanceFeedbackRequest request,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            GrievanceResponse response = grievanceService.submitFeedback(
+                id,
+                request.getRating(),
+                request.getComment(),
+                extractToken(authHeader)
+            );
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ── POST /api/grievances/{id}/reopen (CITIZEN only) ─────────────────────
+    @PostMapping("/{id}/reopen")
+    public ResponseEntity<?> reopen(
+            @PathVariable Long id,
+            @RequestBody GrievanceReopenRequest request,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            GrievanceResponse response = grievanceService.reopenByCitizen(
+                id,
+                request.getReason(),
+                extractToken(authHeader)
+            );
+            return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -124,7 +161,7 @@ public class GrievanceController {
     public ResponseEntity<?> adminGetAll(
             @RequestHeader("Authorization") String authHeader) {
         try {
-            List<GrievanceResponse> list = grievanceService.getAll();
+            List<GrievanceResponse> list = grievanceService.getAll(extractToken(authHeader));
             return ResponseEntity.ok(list);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", e.getMessage()));

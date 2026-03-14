@@ -3,7 +3,7 @@ const OFFICER_PAGES = {
     title: 'Assigned Tasks',
     subtitle: 'Fresh assignments waiting for ownership and field action.',
     hero: 'Assigned Work Queue',
-    heroText: 'Review every grievance routed to you, inspect citizen details, and move work forward without leaving the officer workspace.',
+    heroText: 'Review every grievance routed to you and move work forward without leaving the officer workspace.',
     endpoint: '/api/officer/tasks',
     primaryStat: 'assigned',
     emptyTitle: 'No assigned tasks right now',
@@ -243,7 +243,7 @@ function renderTaskPage(page) {
           <div class="panel-subtitle">${page.subtitle}</div>
         </div>
         <div class="panel-tools">
-          <input class="search-input" id="taskSearch" type="search" placeholder="Search by title, citizen, department or grievance ID" value="${escapeAttr(appState.search)}" />
+          <input class="search-input" id="taskSearch" type="search" placeholder="Search by title, department, location or grievance ID" value="${escapeAttr(appState.search)}" />
           <select class="status-select" id="statusFilter">
             <option value="ALL">All statuses</option>
             <option value="PENDING">Pending</option>
@@ -318,7 +318,6 @@ function renderTaskCard(task, page) {
             <div class="task-meta">
               <span>#${task.id}</span>
               <span>${formatCategory(task.category)}</span>
-              <span>Citizen: ${escapeHtml(task.citizenUsername || 'Unknown')}</span>
               <span>${formatDate(task.submittedAt)}</span>
             </div>
           </div>
@@ -332,6 +331,8 @@ function renderTaskCard(task, page) {
         ${task.location ? `<span class="badge" style="background:#f8fafc;color:#475569;">${escapeHtml(task.location)}</span>` : ''}
       </div>
       ${task.remarks ? `<div class="note"><strong>Latest remarks:</strong> ${escapeHtml(task.remarks)}</div>` : ''}
+      ${task.rating ? `<div class="note"><strong>Citizen feedback:</strong> ${renderStars(task.rating)}${task.feedbackComment ? ` - ${escapeHtml(task.feedbackComment)}` : ''}</div>` : ''}
+      ${task.reopenReason ? `<div class="note"><strong>Latest reopen reason:</strong> ${escapeHtml(task.reopenReason)}</div>` : ''}
       <div class="card-actions">
         <span style="color:var(--ink-soft);font-size:0.8rem;">Updated ${task.updatedAt ? formatDate(task.updatedAt) : 'not yet'}</span>
         <div class="btn-row">
@@ -425,7 +426,6 @@ function filterTasks(tasks) {
     return [
       task.title,
       task.description,
-      task.citizenUsername,
       task.department,
       task.location,
       String(task.id)
@@ -442,12 +442,14 @@ function openTaskModal(id) {
       <div class="modal-field full"><div class="modal-label">Title</div><div class="modal-value">${escapeHtml(appState.selectedTask.title)}</div></div>
       <div class="modal-field"><div class="modal-label">Status</div><div class="modal-value">${formatStatus(appState.selectedTask.status)}</div></div>
       <div class="modal-field"><div class="modal-label">Priority</div><div class="modal-value">${escapeHtml(appState.selectedTask.priority || 'MEDIUM')}</div></div>
-      <div class="modal-field"><div class="modal-label">Citizen</div><div class="modal-value">${escapeHtml(appState.selectedTask.citizenUsername || 'Unknown')}</div></div>
       <div class="modal-field"><div class="modal-label">Department</div><div class="modal-value">${escapeHtml(appState.selectedTask.department || 'Not assigned')}</div></div>
       <div class="modal-field"><div class="modal-label">Location</div><div class="modal-value">${escapeHtml(appState.selectedTask.location || 'Not provided')}</div></div>
       <div class="modal-field full"><div class="modal-label">Description</div><div class="modal-value">${escapeHtml(appState.selectedTask.description || '')}</div></div>
       ${appState.selectedTask.adminNotes ? `<div class="modal-field full"><div class="modal-label">Admin Notes</div><div class="modal-value">${escapeHtml(appState.selectedTask.adminNotes)}</div></div>` : ''}
       ${appState.selectedTask.remarks ? `<div class="modal-field full"><div class="modal-label">Officer Remarks</div><div class="modal-value">${escapeHtml(appState.selectedTask.remarks)}</div></div>` : ''}
+      ${appState.selectedTask.rating ? `<div class="modal-field full"><div class="modal-label">Citizen Rating</div><div class="modal-value">${renderStars(appState.selectedTask.rating)} (${appState.selectedTask.rating}/5)</div></div>` : ''}
+      ${appState.selectedTask.feedbackComment ? `<div class="modal-field full"><div class="modal-label">Citizen Comment</div><div class="modal-value">${escapeHtml(appState.selectedTask.feedbackComment)}</div></div>` : ''}
+      ${appState.selectedTask.reopenReason ? `<div class="modal-field full"><div class="modal-label">Latest Reopen Reason</div><div class="modal-value">${escapeHtml(appState.selectedTask.reopenReason)}</div></div>` : ''}
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal()">Close</button>
@@ -466,7 +468,6 @@ function openUpdateModal(id, fromDetail = false) {
     <div class="modal-grid">
       <div class="modal-field full"><div class="modal-label">Task</div><div class="modal-value">${escapeHtml(appState.selectedTask.title)}</div></div>
       <div class="modal-field"><div class="modal-label">Current Status</div><div class="modal-value">${formatStatus(appState.selectedTask.status)}</div></div>
-      <div class="modal-field"><div class="modal-label">Citizen</div><div class="modal-value">${escapeHtml(appState.selectedTask.citizenUsername || 'Unknown')}</div></div>
       <div class="modal-field full">
         <div class="modal-label">New Status</div>
         <select id="statusUpdateSelect" class="status-update-select">
@@ -543,6 +544,11 @@ function showToast(message, type) {
   setTimeout(() => {
     toast.className = 'toast';
   }, 2600);
+}
+
+function renderStars(rating) {
+  const normalized = Math.max(1, Math.min(5, Number(rating) || 0));
+  return '★'.repeat(normalized) + '☆'.repeat(5 - normalized);
 }
 
 function logout() {

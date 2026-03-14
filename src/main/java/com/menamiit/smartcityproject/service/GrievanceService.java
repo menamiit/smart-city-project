@@ -83,26 +83,36 @@ public class GrievanceService {
             throw new IllegalArgumentException("Access denied.");
         }
  
-        return toResponse(g);
+        return toResponseByRole(g, role);
     }
  
     // ── Get all grievances (Admin/Officer) ────────────────────────────────────
-    public List<GrievanceResponse> getAll() {
+    public List<GrievanceResponse> getAll(String token) {
+        String role = jwtUtil.getRoleFromToken(token);
+        if (!"ADMIN".equals(role) && !"OFFICER".equals(role)) {
+            throw new IllegalArgumentException("Access denied.");
+        }
+
         return grievanceRepository.findAllByOrderBySubmittedAtDesc()
-            .stream().map(this::toResponse).collect(Collectors.toList());
+            .stream().map(g -> toResponseByRole(g, role)).collect(Collectors.toList());
     }
 
     // ── Get grievances by status (Admin/Officer) ─────────────────────────────
-    public List<GrievanceResponse> getByStatus(String status) {
+    public List<GrievanceResponse> getByStatus(String status, String token) {
+        String role = jwtUtil.getRoleFromToken(token);
+        if (!"ADMIN".equals(role) && !"OFFICER".equals(role)) {
+            throw new IllegalArgumentException("Access denied.");
+        }
+
         String normalized = status == null ? "" : status.toUpperCase();
         return grievanceRepository.findByStatusOrderBySubmittedAtDesc(normalized)
-            .stream().map(this::toResponse).collect(Collectors.toList());
+            .stream().map(g -> toResponseByRole(g, role)).collect(Collectors.toList());
     }
 
     public List<GrievanceResponse> getOfficerTasks(String token) {
         String username = requireOfficerUsername(token);
         return grievanceRepository.findByAssignedOfficerOrderBySubmittedAtDesc(username)
-            .stream().map(this::toResponse).collect(Collectors.toList());
+            .stream().map(this::toOfficerResponse).collect(Collectors.toList());
     }
 
     public List<GrievanceResponse> getOfficerTasksByStatuses(String token, Set<String> statuses) {
@@ -151,7 +161,64 @@ public class GrievanceService {
         grievance.setUpdatedAt(LocalDateTime.now());
 
         grievanceRepository.save(grievance);
-        return toResponse(grievance);
+        return toOfficerResponse(grievance);
+    }
+
+    public GrievanceResponse submitFeedback(Long id, Integer rating, String comment, String token) {
+        String role = jwtUtil.getRoleFromToken(token);
+        if (!"CITIZEN".equals(role)) {
+            throw new IllegalArgumentException("Only citizens can submit feedback.");
+        }
+
+        String username = jwtUtil.getUsernameFromToken(token);
+        Grievance grievance = grievanceRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Grievance not found."));
+
+        if (!username.equals(grievance.getCitizenUsername())) {
+            throw new IllegalArgumentException("Access denied.");
+        }
+        if (!"RESOLVED".equals(grievance.getStatus())) {
+            throw new IllegalArgumentException("Feedback can only be submitted for RESOLVED grievances.");
+        }
+        if (rating == null || rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5.");
+        }
+
+        grievance.setRating(rating);
+        grievance.setFeedbackComment(comment != null ? comment.trim() : null);
+        grievance.setFeedbackSubmittedAt(LocalDateTime.now());
+        grievance.setUpdatedAt(LocalDateTime.now());
+
+        return toResponse(grievanceRepository.save(grievance));
+    }
+
+    public GrievanceResponse reopenByCitizen(Long id, String reason, String token) {
+        String role = jwtUtil.getRoleFromToken(token);
+        if (!"CITIZEN".equals(role)) {
+            throw new IllegalArgumentException("Only citizens can reopen grievances.");
+        }
+
+        String username = jwtUtil.getUsernameFromToken(token);
+        Grievance grievance = grievanceRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Grievance not found."));
+
+        if (!username.equals(grievance.getCitizenUsername())) {
+            throw new IllegalArgumentException("Access denied.");
+        }
+        if (!"RESOLVED".equals(grievance.getStatus())) {
+            throw new IllegalArgumentException("Only RESOLVED grievances can be reopened.");
+        }
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("Reopen reason is required.");
+        }
+
+        grievance.setStatus("PENDING");
+        grievance.setReopenReason(reason.trim());
+        grievance.setReopenedAt(LocalDateTime.now());
+        grievance.setReopenCount((grievance.getReopenCount() == null ? 0 : grievance.getReopenCount()) + 1);
+        grievance.setUpdatedAt(LocalDateTime.now());
+
+        return toResponse(grievanceRepository.save(grievance));
     }
 
     // ── Admin assigns grievance to officer ───────────────────────────────────
@@ -268,14 +335,26 @@ public class GrievanceService {
     }
  
     // ── Map entity to response ────────────────────────────────────────────────
-    private GrievanceResponse toResponse(Grievance g) {
+    private GrievanceResponse toResponseByRole(Grievance g, String role) {
+        String citizenName = "OFFICER".equals(role) ? null : g.getCitizenUsername();
+
         return new GrievanceResponse(
             g.getId(), g.getTitle(), g.getDescription(),
             g.getCategory(), g.getStatus(), g.getLocation(),
-            g.getImageBase64(), g.getCitizenUsername(),
+            g.getImageBase64(), citizenName,
             g.getSubmittedAt(), g.getUpdatedAt(),
             g.getAssignedOfficer(), g.getRemarks(),
-            g.getAdminNotes(), g.getPriority(), g.getDepartment()
+            g.getAdminNotes(), g.getPriority(), g.getDepartment(),
+            g.getRating(), g.getFeedbackComment(), g.getFeedbackSubmittedAt(),
+            g.getReopenReason(), g.getReopenedAt(), g.getReopenCount()
         );
+    }
+
+    private GrievanceResponse toResponse(Grievance g) {
+        return toResponseByRole(g, "ADMIN");
+    }
+
+    private GrievanceResponse toOfficerResponse(Grievance g) {
+        return toResponseByRole(g, "OFFICER");
     }
 }

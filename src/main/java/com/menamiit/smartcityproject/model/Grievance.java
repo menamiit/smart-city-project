@@ -65,6 +65,20 @@ public class Grievance {
     @Column(columnDefinition = "TEXT")
     private String adminNotes;   // admin notes shown in view modal
 
+    private Integer rating; // 1..5 citizen feedback score
+
+    @Column(columnDefinition = "TEXT")
+    private String feedbackComment;
+
+    private LocalDateTime feedbackSubmittedAt;
+
+    @Column(columnDefinition = "TEXT")
+    private String reopenReason;
+
+    private LocalDateTime reopenedAt;
+
+    private Integer reopenCount;
+
     @PrePersist
     protected void onCreate() {
         if(submittedAt==null) {
@@ -77,6 +91,10 @@ public class Grievance {
 
         if(priority == null) {
             priority = "MEDIUM";
+        }
+
+        if (reopenCount == null) {
+            reopenCount = 0;
         }
     }
 }

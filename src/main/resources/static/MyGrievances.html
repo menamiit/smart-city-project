@@ -119,6 +119,16 @@
   .modal-label { font-size: 0.75rem; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; margin-bottom: 4px; }
   .modal-value { font-size: 0.92rem; line-height: 1.5; }
   .modal-img { width: 100%; border-radius: 12px; margin-top: 8px; max-height: 200px; object-fit: cover; }
+  .section-title { font-family: 'Syne', sans-serif; font-size: 0.95rem; font-weight: 700; margin: 8px 0; }
+  .stars { display: flex; gap: 6px; margin: 8px 0 10px; }
+  .star-btn { border: none; background: transparent; font-size: 1.35rem; cursor: pointer; color: #cbd5e1; }
+  .star-btn.active { color: #f59e0b; }
+  .text-input { width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-family: inherit; font-size: 0.88rem; }
+  .textarea-input { width: 100%; min-height: 84px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-family: inherit; font-size: 0.88rem; resize: vertical; }
+  .inline-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+  .btn-primary { border: none; background: var(--accent); color: #fff; border-radius: 10px; padding: 9px 14px; font-family: 'Syne', sans-serif; font-weight: 700; cursor: pointer; }
+  .btn-warn { border: none; background: #dc2626; color: #fff; border-radius: 10px; padding: 9px 14px; font-family: 'Syne', sans-serif; font-weight: 700; cursor: pointer; }
+  .small-note { color: var(--ink-soft); font-size: 0.78rem; }
 
   .empty { text-align: center; padding: 60px 20px; }
   .empty-icon { font-size: 3.5rem; margin-bottom: 16px; }
@@ -216,6 +226,8 @@
 
   let allGrievances = [];
   let currentFilter = 'ALL';
+  let selectedRating = 0;
+  let selectedGrievanceId = null;
 
   const CAT_ICONS = {
     WATER: '💧', STREET_LIGHT: '💡', ROAD: '🛣️', SANITATION: '🗑️',
@@ -317,6 +329,7 @@
             <span class="status-badge status-${g.status}">${g.status.replace('_', ' ')}</span>
           </div>
           <div class="progress-track">${stepsHtml}</div>
+          ${g.rating ? `<div class="small-note" style="margin-top:10px;">Your Rating: ${renderStars(g.rating)}${g.feedbackComment ? ` - ${escapeHtml(g.feedbackComment)}` : ''}</div>` : ''}
         </div>`;
     }).join('');
   }
@@ -324,6 +337,9 @@
   function openModal(id) {
     const g = allGrievances.find(x => x.id === id);
     if (!g) return;
+
+    selectedGrievanceId = id;
+    selectedRating = Number(g.rating || 0);
 
     const date = new Date(g.submittedAt).toLocaleString('en-IN');
     document.getElementById('modalTitle').textContent = `#${g.id} — ${g.title}`;
@@ -338,10 +354,132 @@
       <div class="modal-field"><div class="modal-label">Submitted On</div><div class="modal-value">${date}</div></div>
       ${g.assignedOfficer ? `<div class="modal-field"><div class="modal-label">Assigned Officer</div><div class="modal-value">👷 ${g.assignedOfficer}</div></div>` : ''}
       ${g.remarks ? `<div class="modal-field"><div class="modal-label">Remarks</div><div class="modal-value">${g.remarks}</div></div>` : ''}
+      ${g.reopenReason ? `<div class="modal-field"><div class="modal-label">Latest Reopen Reason</div><div class="modal-value">${escapeHtml(g.reopenReason)}</div></div>` : ''}
       ${g.imageBase64 ? `<div class="modal-field"><div class="modal-label">Attached Photo</div><img class="modal-img" src="${g.imageBase64}"/></div>` : ''}
+      ${g.status === 'RESOLVED' ? renderResolvedActions(g) : ''}
     `;
 
     document.getElementById('modalOverlay').classList.add('show');
+  }
+
+  function renderResolvedActions(g) {
+    return `
+      <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;"/>
+      <div class="section-title">Rate Resolution</div>
+      <div class="small-note">Submit a 1-5 star rating. Comment is optional.</div>
+      <div class="stars" id="ratingStars">${buildStars(selectedRating)}</div>
+      <textarea id="ratingComment" class="textarea-input" placeholder="Share optional feedback">${escapeHtml(g.feedbackComment || '')}</textarea>
+      <div class="inline-actions">
+        <button class="btn-primary" onclick="submitRating()">Save Rating</button>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;"/>
+      <div class="section-title">Unsatisfied? Reopen Grievance</div>
+      <div class="small-note">Reopen reason is required. Reopened grievances move to PENDING for re-triage.</div>
+      <textarea id="reopenReason" class="textarea-input" placeholder="Explain what is still unresolved"></textarea>
+      <div class="inline-actions">
+        <button class="btn-warn" onclick="submitReopen()">Reopen</button>
+      </div>
+    `;
+  }
+
+  function buildStars(value) {
+    return [1, 2, 3, 4, 5].map(i =>
+      `<button class="star-btn ${i <= value ? 'active' : ''}" type="button" onclick="setRating(${i})">★</button>`
+    ).join('');
+  }
+
+  function setRating(value) {
+    selectedRating = value;
+    const stars = document.getElementById('ratingStars');
+    if (stars) {
+      stars.innerHTML = buildStars(selectedRating);
+    }
+  }
+
+  async function submitRating() {
+    if (!selectedGrievanceId) return;
+    if (selectedRating < 1 || selectedRating > 5) {
+      alert('Please select a rating between 1 and 5 stars.');
+      return;
+    }
+
+    const comment = document.getElementById('ratingComment')?.value?.trim() || '';
+    try {
+      const res = await fetch(`/api/grievances/${selectedGrievanceId}/feedback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ rating: selectedRating, comment })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to save rating.');
+      }
+
+      replaceGrievance(data);
+      updateStats();
+      renderList();
+      openModal(selectedGrievanceId);
+      alert('Rating saved successfully.');
+    } catch (error) {
+      alert(error.message || 'Failed to save rating.');
+    }
+  }
+
+  async function submitReopen() {
+    if (!selectedGrievanceId) return;
+    const reason = document.getElementById('reopenReason')?.value?.trim() || '';
+    if (!reason) {
+      alert('Please provide a reopen reason.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/grievances/${selectedGrievanceId}/reopen`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ reason })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to reopen grievance.');
+      }
+
+      replaceGrievance(data);
+      updateStats();
+      renderList();
+      closeModalDirect();
+      alert('Grievance reopened successfully and moved to PENDING.');
+    } catch (error) {
+      alert(error.message || 'Failed to reopen grievance.');
+    }
+  }
+
+  function replaceGrievance(updated) {
+    const idx = allGrievances.findIndex(g => g.id === updated.id);
+    if (idx !== -1) {
+      allGrievances[idx] = updated;
+    }
+  }
+
+  function renderStars(rating) {
+    const n = Math.max(1, Math.min(5, Number(rating) || 0));
+    return '★'.repeat(n) + '☆'.repeat(5 - n);
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   function closeModal(e) {

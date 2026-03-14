@@ -3,10 +3,12 @@ package com.menamiit.smartcityproject.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import java.time.LocalDateTime;
+import lombok.NoArgsConstructor;
 
 
 @Data
 @AllArgsConstructor
+@NoArgsConstructor
 public class GrievanceResponse {
     private Long id;
     private String title;
@@ -23,4 +25,10 @@ public class GrievanceResponse {
     private String adminNotes;
     private String priority;
     private String department;
+    private Integer rating;
+    private String feedbackComment;
+    private LocalDateTime feedbackSubmittedAt;
+    private String reopenReason;
+    private LocalDateTime reopenedAt;
+    private Integer reopenCount;
 }

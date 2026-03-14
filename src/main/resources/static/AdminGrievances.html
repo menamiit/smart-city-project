@@ -736,7 +736,7 @@
     let filtered = allGrievances.filter(g => {
       const matchSearch = !search ||
         g.title?.toLowerCase().includes(search) ||
-        g.username?.toLowerCase().includes(search);
+        g.citizenUsername?.toLowerCase().includes(search);
       const matchStatus = !status || g.status === status;
       const matchDept   = !dept   || g.department === dept;
       return matchSearch && matchStatus && matchDept;
@@ -766,8 +766,9 @@
         <td>${escHtml(g.department ?? '<span style="color:#9ca3af">Unassigned</span>')}</td>
         <td><span class="priority-${g.priority ?? 'LOW'}">${g.priority ?? '—'}</span></td>
         <td><span class="badge badge-${g.status}">${formatStatus(g.status)}</span></td>
-        <td style="font-size:0.85rem;color:#374151;">${escHtml(g.username ?? '—')}</td>
-        <td style="font-size:0.82rem;color:#6b7280;">${formatDate(g.createdAt)}</td>
+        <td>${g.rating ? `${'★'.repeat(g.rating)}${'☆'.repeat(5 - g.rating)}` : '—'}</td>
+        <td style="font-size:0.85rem;color:#374151;">${escHtml(g.citizenUsername ?? '—')}</td>
+        <td style="font-size:0.82rem;color:#6b7280;">${formatDate(g.submittedAt)}</td>
         <td>
           <button class="action-btn btn-view"   onclick="openView(${g.id})">View</button>
           <button class="action-btn btn-assign" onclick="openAssign(${g.id})">Assign</button>
@@ -787,6 +788,7 @@
             <th>Department</th>
             <th>Priority</th>
             <th>Status</th>
+            <th>Rating</th>
             <th>Submitted By</th>
             <th>Date</th>
             <th>Actions</th>
@@ -807,10 +809,21 @@
     document.getElementById('vDept').textContent     = g.department ?? 'Unassigned';
     document.getElementById('vPriority').textContent = g.priority ?? '—';
     document.getElementById('vStatus').innerHTML     = `<span class="badge badge-${g.status}">${formatStatus(g.status)}</span>`;
-    document.getElementById('vUser').textContent     = g.username ?? '—';
+    document.getElementById('vUser').textContent     = g.citizenUsername ?? '—';
     document.getElementById('vLocation').textContent = g.location ?? '—';
-    document.getElementById('vCreated').textContent  = formatDate(g.createdAt);
-    document.getElementById('vNotes').textContent    = g.adminNotes ?? 'None';
+    document.getElementById('vCreated').textContent  = formatDate(g.submittedAt);
+    const details = [];
+    details.push(`Admin Notes: ${g.adminNotes || 'None'}`);
+    if (g.rating) {
+      details.push(`Citizen Rating: ${'★'.repeat(g.rating)}${'☆'.repeat(5 - g.rating)} (${g.rating}/5)`);
+    }
+    if (g.feedbackComment) {
+      details.push(`Citizen Comment: ${g.feedbackComment}`);
+    }
+    if (g.reopenReason) {
+      details.push(`Latest Reopen Reason: ${g.reopenReason}`);
+    }
+    document.getElementById('vNotes').textContent = details.join('\n');
     openModal('viewModal');
   }
 

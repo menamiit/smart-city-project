@@ -408,6 +408,10 @@ function navigateTo(panelId) {
   if (panelId === 'allissues') { window.location.href = '/AdminGrievances.html'; return; }
   if (panelId === 'users')     { window.location.href = '/ManageUsers.html';     return; }
   if (panelId === 'assign')    { window.location.href = '/AssignOfficers.html';  return; }
+  if (panelId === 'assigned')  { window.location.href = '/OfficerAssignedTasks.html'; return; }
+  if (panelId === 'inprogress') { window.location.href = '/OfficerInProgress.html'; return; }
+  if (panelId === 'completed') { window.location.href = '/OfficerCompleted.html'; return; }
+  if (panelId === 'profile' && role === 'OFFICER') { window.location.href = '/OfficerProfile.html'; return; }
   activeNav = panelId;
   buildNav();
   renderContent(panelId);
@@ -531,7 +535,7 @@ function renderOverview() {
       <div class="card">
         <div class="card-header">
           <span class="card-title">Recent ${role === 'CITIZEN' ? 'My Grievances' : 'Grievances'}</span>
-          <span class="card-action" onclick="window.location.href=role==='CITIZEN'?'/MyGrievances.html':'/AdminGrievances.html'">View all →</span>
+          <span class="card-action" onclick="window.location.href=role==='CITIZEN'?'/MyGrievances.html':(role==='OFFICER'?'/OfficerAssignedTasks.html':'/AdminGrievances.html')">View all →</span>
         </div>
         ${recent.length ? recent.map(g => `
           <div class="grievance-item">
@@ -609,7 +613,9 @@ async function loadDashboardData() {
   dashboardData.error = null;
   renderContent('overview');
 
-  const endpoint = role === 'CITIZEN' ? '/api/grievances/my' : '/api/grievances/all';
+  const endpoint = role === 'CITIZEN'
+    ? '/api/grievances/my'
+    : (role === 'OFFICER' ? '/api/officer/tasks' : '/api/grievances/all');
 
   try {
     const res = await fetch(endpoint, {

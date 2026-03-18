@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Analytics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="/analytics-common.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .top a { text-decoration: none; color: #2563eb; font-weight: 600; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; }
+    .k { font-size: 12px; color: #64748b; margin-bottom: 6px; text-transform: uppercase; }
+    .v { font-size: 24px; font-weight: 700; }
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; }
+    .panel h3 { margin: 0 0 10px; font-size: 16px; }
+    .zones { margin: 0; padding: 0; list-style: none; }
+    .zones li { padding: 8px 0; border-bottom: 1px dashed #e2e8f0; display: flex; justify-content: space-between; gap: 12px; }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+      .charts { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h2>Analytics & Reports</h2>
+      <a href="/Dashboard.html">Back to Dashboard</a>
+    </div>
+
+    <div class="grid">
+      <div class="card"><div class="k">Resolved</div><div id="resolved" class="v">0</div></div>
+      <div class="card"><div class="k">On-Time</div><div id="ontime" class="v">0</div></div>
+      <div class="card"><div class="k">Late</div><div id="late" class="v">0</div></div>
+      <div class="card"><div class="k">SLA %</div><div id="sla" class="v">0%</div></div>
+    </div>
+
+    <div class="charts">
+      <div class="panel">
+        <h3>Complaint Distribution by Category</h3>
+        <canvas id="categoryChart"></canvas>
+      </div>
+      <div class="panel">
+        <h3>Complaint Distribution by Zone</h3>
+        <canvas id="zoneChart"></canvas>
+      </div>
+      <div class="panel">
+        <h3>SLA Performance</h3>
+        <canvas id="slaChart"></canvas>
+      </div>
+      <div class="panel">
+        <h3>Red Zones</h3>
+        <ul id="redZones" class="zones"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { token, user } = AnalyticsCommon.getAuth();
+    if (user.role !== 'ADMIN') {
+      alert('Access denied. Admin only.');
+      window.location.href = '/Dashboard.html';
+    }
+
+    function pie(canvasId, labels, data) {
+      return new Chart(document.getElementById(canvasId), {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data, backgroundColor: AnalyticsCommon.palette() }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+
+    function bar(canvasId, labels, data) {
+      return new Chart(document.getElementById(canvasId), {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Count', data, backgroundColor: '#0ea5e9' }] },
+        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+      });
+    }
+
+    async function load() {
+      try {
+        const [cat, zone, sla, red] = await Promise.all([
+          AnalyticsCommon.fetchJson('/api/analytics/distribution/category', token),
+          AnalyticsCommon.fetchJson('/api/analytics/distribution/zone', token),
+          AnalyticsCommon.fetchJson('/api/analytics/sla/summary', token),
+          AnalyticsCommon.fetchJson('/api/analytics/red-zones?minComplaints=3', token)
+        ]);
+
+        document.getElementById('resolved').textContent = sla.totalResolved ?? 0;
+        document.getElementById('ontime').textContent = sla.onTimeResolved ?? 0;
+        document.getElementById('late').textContent = sla.lateResolved ?? 0;
+        document.getElementById('sla').textContent = (sla.compliancePercent ?? 0) + '%';
+
+        pie('categoryChart', cat.map(x => x.label), cat.map(x => x.total));
+        bar('zoneChart', zone.map(x => x.label), zone.map(x => x.total));
+
+        new Chart(document.getElementById('slaChart'), {
+          type: 'bar',
+          data: {
+            labels: ['On-Time', 'Late'],
+            datasets: [{ label: 'Resolved Cases', data: [sla.onTimeResolved || 0, sla.lateResolved || 0], backgroundColor: ['#22c55e', '#ef4444'] }]
+          },
+          options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+
+        const redEl = document.getElementById('redZones');
+        redEl.innerHTML = red.length
+          ? red.map(z => '<li><span>' + z.zone + '</span><span>' + z.totalComplaints + ' complaints | ' + z.reopenRatePercent + '% reopen</span></li>').join('')
+          : '<li><span>No red zones at current threshold.</span><span></span></li>';
+      } catch (err) {
+        alert(err.message || 'Failed to load analytics');
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

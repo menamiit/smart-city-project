@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Officer Analytics</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="/analytics-common.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 20px; }
+    .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .top a { text-decoration: none; color: #2563eb; font-weight: 600; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; }
+    .k { font-size: 12px; color: #64748b; margin-bottom: 6px; text-transform: uppercase; }
+    .v { font-size: 22px; font-weight: 700; }
+    .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+      .charts { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h2>My Analytics</h2>
+      <a href="/OfficerAssignedTasks.html">Back to Tasks</a>
+    </div>
+
+    <div class="grid">
+      <div class="card"><div class="k">Assigned</div><div id="assigned" class="v">0</div></div>
+      <div class="card"><div class="k">Pending</div><div id="pending" class="v">0</div></div>
+      <div class="card"><div class="k">In Progress</div><div id="progress" class="v">0</div></div>
+      <div class="card"><div class="k">Completed</div><div id="completed" class="v">0</div></div>
+    </div>
+
+    <div class="charts">
+      <div class="panel">
+        <h3>Workload Status</h3>
+        <canvas id="workChart"></canvas>
+      </div>
+      <div class="panel">
+        <h3>SLA Compliance</h3>
+        <canvas id="slaChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { token, user } = AnalyticsCommon.getAuth();
+    if (user.role !== 'OFFICER') {
+      alert('Access denied. Officers only.');
+      window.location.href = '/Dashboard.html';
+    }
+
+    async function load() {
+      try {
+        const data = await AnalyticsCommon.fetchJson('/api/analytics/officer/me', token);
+        document.getElementById('assigned').textContent = data.assigned ?? 0;
+        document.getElementById('pending').textContent = data.pending ?? 0;
+        document.getElementById('progress').textContent = data.inProgress ?? 0;
+        document.getElementById('completed').textContent = data.completed ?? 0;
+
+        new Chart(document.getElementById('workChart'), {
+          type: 'doughnut',
+          data: {
+            labels: ['Pending', 'In Progress', 'Completed'],
+            datasets: [{
+              data: [data.pending || 0, data.inProgress || 0, data.completed || 0],
+              backgroundColor: ['#f59e0b', '#0ea5e9', '#22c55e']
+            }]
+          },
+          options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        new Chart(document.getElementById('slaChart'), {
+          type: 'bar',
+          data: {
+            labels: ['On-Time', 'Late'],
+            datasets: [{
+              label: 'Resolved Cases',
+              data: [data.sla?.onTimeResolved || 0, data.sla?.lateResolved || 0],
+              backgroundColor: ['#22c55e', '#ef4444']
+            }]
+          },
+          options: { responsive: true, scales: { y: { beginAtZero: true } } }
+        });
+      } catch (err) {
+        alert(err.message || 'Failed to load officer analytics');
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

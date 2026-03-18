@@ -604,7 +604,7 @@
       { id: 'users',     label: 'Manage Users',    icon: usersIcon() },
     ]},
     { section: 'Analytics', items: [
-      { id: 'reports',  label: 'SLA Reports',     icon: chartIcon() },
+      { id: 'reports',  label: 'Analytics & Reports', icon: chartIcon() },
       { id: 'settings', label: 'System Settings', icon: gearIcon() },
     ]},
   ];
@@ -628,6 +628,7 @@
     if (id === 'allissues')  { window.location.href = '/AdminGrievances.html'; return; }
     if (id === 'users')      { window.location.href = '/ManageUsers.html'; return; }
     if (id === 'assign')     { window.location.href = '/AssignOfficers.html'; return; }
+    if (id === 'reports')    { window.location.href = '/AdminAnalytics.html'; return; }
   }
 
   buildNav();

@@ -51,60 +51,63 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authorizeHttpRequests(auth -> auth
-                // Static frontend pages do client-side role checks after login.
-                .requestMatchers(
-                    "/",
-                    "/index.html",
-                    "/dashboard.html",
-                    "/Dashboard.html",
-                    "/submit.html",
-                    "/Submit.html",
-                    "/mygrievances.html",
-                    "/MyGrievances.html",
-                    "/admin.html",
-                    "/admingrievances.html",
-                    "/AdminGrievances.html",
-                    "/manageusers.html",
-                    "/ManageUsers.html",
-                    "/assignofficers.html",
-                    "/AssignOfficers.html",
-                    "/officerassignedtasks.html",
-                    "/OfficerAssignedTasks.html",
-                    "/officerinprogress.html",
-                    "/OfficerInProgress.html",
-                    "/officercompleted.html",
-                    "/OfficerCompleted.html",
-                    "/officerprofile.html",
-                    "/OfficerProfile.html",
-                    "/officer-pages.css",
-                    "/officer-common.js",
-                    "/dashboard",
-                    "/submit",
-                    "/mygrievances",
-                    "/favicon.ico",
-                    "/h2-console/**",
-                    "/css/**", "/js/**", "/images/**"
-                ).permitAll()
-                // ── Auth API — open ────────────────────────────────────────
-                .requestMatchers("/api/auth/**").permitAll()
-                // ── Grievance API — JWT validated in filter ────────────────
-                .requestMatchers("/api/grievances/**").permitAll()
-                // ── Admin API — JWT validated in controller ────────────────
-                .requestMatchers("/api/admin/**").permitAll()
-                .requestMatchers("/api/officer/**").hasRole("OFFICER")
-                .anyRequest().authenticated()
-            )
-            .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin())
-            )
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        // Static frontend pages do client-side role checks after login.
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/dashboard.html",
+                                "/Dashboard.html",
+                                "/submit.html",
+                                "/Submit.html",
+                                "/mygrievances.html",
+                                "/MyGrievances.html",
+                                "/admin.html",
+                                "/admingrievances.html",
+                                "/AdminGrievances.html",
+                                "/manageusers.html",
+                                "/ManageUsers.html",
+                                "/assignofficers.html",
+                                "/AssignOfficers.html",
+                                "/officerassignedtasks.html",
+                                "/adminanalytics.html",
+                                "/AdminAnalytics.html",
+                                "/officeranalytics.html",
+                                "/OfficerAnalytics.html",
+                                "/analytics-common.js",
+                                "/OfficerAssignedTasks.html",
+                                "/officerinprogress.html",
+                                "/OfficerInProgress.html",
+                                "/officercompleted.html",
+                                "/OfficerCompleted.html",
+                                "/officerprofile.html",
+                                "/OfficerProfile.html",
+                                "/officer-pages.css",
+                                "/officer-common.js",
+                                "/dashboard",
+                                "/submit",
+                                "/mygrievances",
+                                "/favicon.ico",
+                                "/h2-console/**",
+                                "/css/**", "/js/**", "/images/**")
+                        .permitAll()
+                        // ── Auth API — open ────────────────────────────────────────
+                        .requestMatchers("/api/auth/**").permitAll()
+                        // ── Grievance API — JWT validated in filter ────────────────
+                        .requestMatchers("/api/grievances/**").permitAll()
+                        // ── Admin API — JWT validated in controller ────────────────
+                        .requestMatchers("/api/admin/**").permitAll()
+                        .requestMatchers("/api/officer/**").hasRole("OFFICER")
+                        .requestMatchers("/api/analytics/**").hasAnyRole("ADMIN", "OFFICER")
+                        .anyRequest().authenticated())
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin()))
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

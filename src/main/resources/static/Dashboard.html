@@ -343,7 +343,7 @@ const NAV = {
       { id: 'users',     label: 'Manage Users',    icon: usersIcon(),  badge: null },
     ]},
     { section: 'Analytics', items: [
-      { id: 'reports',  label: 'SLA Reports',     icon: chartIcon(),  badge: null },
+      { id: 'reports',  label: 'Analytics & Reports', icon: chartIcon(),  badge: null },
       { id: 'settings', label: 'System Settings', icon: gearIcon(),   badge: null },
     ]},
   ],
@@ -408,9 +408,11 @@ function navigateTo(panelId) {
   if (panelId === 'allissues') { window.location.href = '/AdminGrievances.html'; return; }
   if (panelId === 'users')     { window.location.href = '/ManageUsers.html';     return; }
   if (panelId === 'assign')    { window.location.href = '/AssignOfficers.html';  return; }
+  if (panelId === 'reports')   { window.location.href = '/AdminAnalytics.html';   return; }
   if (panelId === 'assigned')  { window.location.href = '/OfficerAssignedTasks.html'; return; }
   if (panelId === 'inprogress') { window.location.href = '/OfficerInProgress.html'; return; }
   if (panelId === 'completed') { window.location.href = '/OfficerCompleted.html'; return; }
+  if (panelId === 'analytics') { window.location.href = '/OfficerAnalytics.html';  return; }
   if (panelId === 'profile' && role === 'OFFICER') { window.location.href = '/OfficerProfile.html'; return; }
   activeNav = panelId;
   buildNav();

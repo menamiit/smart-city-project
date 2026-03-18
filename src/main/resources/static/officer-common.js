@@ -68,6 +68,9 @@ const OFFICER_NAV = [
     { id: 'inprogress', label: 'In Progress', href: '/OfficerInProgress.html', badgeKey: 'inProgress', icon: wrenchIcon() },
     { id: 'completed', label: 'Completed', href: '/OfficerCompleted.html', badgeKey: 'completed', icon: checkIcon() }
   ]},
+  { section: 'Analytics', items: [
+    { id: 'analytics', label: 'My Analytics', href: '/OfficerAnalytics.html', badgeKey: null, icon: chartIcon() }
+  ]},
   { section: 'Account', items: [
     { id: 'profile', label: 'My Profile', href: '/OfficerProfile.html', badgeKey: null, icon: userIcon() }
   ]}
@@ -609,5 +612,6 @@ function listIcon() { return `<svg viewBox="0 0 24 24" fill="currentColor"><path
 function wrenchIcon() { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22.7 19.3l-6.4-6.4a6 6 0 01-7.8-7.8l3.1 3.1 2.8-.7.7-2.8-3.1-3.1a6 6 0 017.8 7.8l6.4 6.4-3.5 3.5zM4.5 18A2.5 2.5 0 107 20.5 2.5 2.5 0 004.5 18z"/></svg>`; }
 function checkIcon() { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`; }
 function userIcon() { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`; }
+function chartIcon() { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 14H7v-6h4v6zm6 0h-4V7h4v10z"/></svg>`; }
 
 document.addEventListener('DOMContentLoaded', initOfficerPage);

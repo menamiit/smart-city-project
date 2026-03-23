@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CivicPulse - System Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #0d1117;
+      --ink-soft: #4b5563;
+      --surface: #f3f5f9;
+      --panel: #ffffff;
+      --accent: #1a56db;
+      --admin: #8b5cf6;
+      --border: #e5e8f0;
+      --sidebar-w: 260px;
+    }
+
+    html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); }
+    body.role-admin { --role-color: var(--admin); }
+    .app { min-height: 100vh; width: 100%; }
+
+    .sidebar {
+      background: var(--ink); display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0;
+      width: var(--sidebar-w); height: 100vh;
+      overflow-y: auto; z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 24px 20px 20px; display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .logo-icon-sm {
+      width: 34px; height: 34px; background: var(--accent); border-radius: 9px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .logo-icon-sm svg { width: 18px; height: 18px; fill: white; }
+    .logo-text-sm { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: white; }
+    .sidebar-role {
+      margin: 16px 16px 8px; padding: 10px 14px; border-radius: 12px;
+      background: rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px;
+    }
+    .role-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--role-color); flex-shrink: 0; }
+    .role-name-display { font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 0.06em; }
+    .role-username { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-top: 1px; }
+    .nav-section { padding: 20px 12px 8px; }
+    .nav-section-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.3); padding: 0 8px; margin-bottom: 6px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px; cursor: pointer; text-decoration: none;
+      color: rgba(255,255,255,0.55); font-size: 0.88rem; font-weight: 500;
+      transition: background 0.15s, color 0.15s; margin-bottom: 2px;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+    .nav-item.active { background: var(--role-color); color: white; }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .logout-btn {
+      width: 100%; padding: 10px; background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.2); border-radius: 10px;
+      color: #f87171; font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+      font-weight: 500; cursor: pointer; transition: background 0.15s;
+    }
+    .logout-btn:hover { background: rgba(239,68,68,0.22); }
+
+    .main { margin-left: var(--sidebar-w); width: calc(100% - var(--sidebar-w)); min-height: 100vh; }
+    .topbar {
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .topbar-left h1 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.25rem; color: var(--ink); }
+    .topbar-left p { font-size: 0.82rem; color: var(--ink-soft); margin-top: 1px; }
+    .avatar {
+      width: 38px; height: 38px; border-radius: 50%; background: var(--role-color); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.9rem;
+    }
+
+    .content { padding: 24px 32px 32px; width: 100%; }
+    .content-grid { display: grid; grid-template-columns: 280px 1fr; gap: 18px; align-items: start; }
+
+    .panel {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;
+      box-shadow: 0 2px 10px rgba(2, 6, 23, 0.03);
+    }
+
+    .tab-list { display: grid; gap: 8px; }
+    .tab-btn {
+      width: 100%; text-align: left; border: 1px solid #e2e8f0; border-radius: 10px;
+      background: #fff; color: #0f172a; padding: 10px 12px; cursor: pointer;
+      font-size: 0.9rem; font-weight: 600;
+    }
+    .tab-btn:hover { border-color: #c7d2fe; background: #f8faff; }
+    .tab-btn.active { background: #ede9fe; border-color: #8b5cf6; color: #4c1d95; }
+
+    .section-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; margin-bottom: 4px; }
+    .section-help { color: #64748b; font-size: 0.85rem; margin-bottom: 18px; }
+
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 12px 16px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 0.82rem; color: #334155; font-weight: 600; }
+    .field input, .field select, .field textarea {
+      width: 100%; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 12px;
+      font-family: inherit; font-size: 0.9rem; outline: none; background: #fff;
+    }
+    .field textarea { min-height: 84px; resize: vertical; }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+    }
+
+    .toggle-row {
+      border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin-bottom: 8px;
+    }
+    .toggle-row p { color: #475569; font-size: 0.85rem; margin-top: 2px; }
+    .switch { position: relative; width: 44px; height: 24px; display: inline-block; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0; background: #cbd5e1; border-radius: 999px;
+      cursor: pointer; transition: .2s;
+    }
+    .slider:before {
+      content: ''; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px;
+      background: white; border-radius: 50%; transition: .2s;
+    }
+    .switch input:checked + .slider { background: #8b5cf6; }
+    .switch input:checked + .slider:before { transform: translateX(20px); }
+
+    .actions {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+    }
+    .btn {
+      border: 1px solid #cbd5e1; border-radius: 10px; padding: 9px 14px;
+      font-size: 0.86rem; font-weight: 600; cursor: pointer; background: #fff; color: #1e293b;
+    }
+    .btn:hover { background: #f8fafc; }
+    .btn.primary { background: #8b5cf6; border-color: #8b5cf6; color: #fff; }
+    .btn.primary:hover { background: #7c3aed; }
+    .btn.warn { color: #991b1b; border-color: #fecaca; background: #fff5f5; }
+
+    .status-text { margin-left: auto; font-size: 0.82rem; color: #64748b; align-self: center; }
+
+    .toast {
+      position: fixed; right: 20px; bottom: 20px; z-index: 999;
+      background: #111827; color: #fff; border-radius: 10px;
+      padding: 10px 14px; font-size: 0.86rem; opacity: 0; pointer-events: none;
+      transform: translateY(8px); transition: 0.2s;
+    }
+    .toast.show { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+    @media (max-width: 1080px) {
+      .content-grid { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .status-text { margin-left: 0; width: 100%; }
+    }
+    @media (max-width: 640px) {
+      .sidebar { transform: translateX(-100%); }
+      .main { margin-left: 0; width: 100%; }
+      .content { padding: 18px; }
+      .topbar { padding: 14px 18px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon-sm">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      </div>
+      <span class="logo-text-sm">CivicPulse</span>
+    </div>
+    <div class="sidebar-role">
+      <div class="role-dot"></div>
+      <div class="role-info">
+        <div class="role-name-display" id="sidebarRole">ADMIN</div>
+        <div class="role-username" id="sidebarUsername">@user</div>
+      </div>
+    </div>
+    <div id="navItems"></div>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">⬡ Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>System Settings</h1>
+        <p id="topbarDate"></p>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" id="userAvatar">?</div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="content-grid">
+        <div class="panel">
+          <div class="section-title">Configuration</div>
+          <div class="section-help">Choose a settings category to edit.</div>
+          <div class="tab-list" id="tabList">
+            <button class="tab-btn active" data-tab="workflow" onclick="switchTab('workflow')">Workflow Rules</button>
+            <button class="tab-btn" data-tab="sla" onclick="switchTab('sla')">SLA & Escalation</button>
+            <button class="tab-btn" data-tab="assignment" onclick="switchTab('assignment')">Assignment Policy</button>
+            <button class="tab-btn" data-tab="notifications" onclick="switchTab('notifications')">Notifications</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <form id="settingsForm" onsubmit="saveSettings(event)">
+            <div id="tabContent"></div>
+            <div class="actions">
+              <button type="submit" class="btn primary">Save Changes</button>
+              <button type="button" class="btn" onclick="downloadSettings()">Export JSON</button>
+              <label class="btn" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
+                Import JSON
+                <input type="file" id="importInput" accept="application/json" style="display:none" onchange="importSettings(event)" />
+              </label>
+              <button type="button" class="btn warn" onclick="resetDefaults()">Reset Defaults</button>
+              <span class="status-text" id="savedAt">No changes saved yet.</span>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  const STORAGE_KEY = 'civicpulse_admin_settings_v1';
+  const { token, user } = getAuth();
+
+  if (user.role !== 'ADMIN') {
+    alert('Access denied. Admin only.');
+    window.location.href = '/Dashboard.html';
+  }
+
+  document.body.classList.add('role-admin');
+  document.getElementById('sidebarRole').textContent = 'ADMIN';
+  document.getElementById('sidebarUsername').textContent = '@' + user.username;
+  document.getElementById('userAvatar').textContent = user.username.charAt(0).toUpperCase();
+  document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('en-IN', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  const DEFAULTS = {
+    workflow: {
+      allowReopenDays: 7,
+      autoCloseDays: 14,
+      requireClosureReason: true,
+      enableCitizenFeedback: true
+    },
+    sla: {
+      criticalHours: 8,
+      highHours: 24,
+      mediumHours: 48,
+      lowHours: 72,
+      escalationHours: 24
+    },
+    assignment: {
+      mode: 'BALANCED',
+      maxOpenPerOfficer: 30,
+      restrictCrossDepartment: true,
+      departmentFallback: 'GENERAL'
+    },
+    notifications: {
+      emailCitizenOnUpdate: true,
+      emailOfficerOnAssign: true,
+      smsCitizenOnClose: false,
+      dailyAdminDigest: true,
+      digestHour: 9
+    },
+    meta: {
+      savedBy: null,
+      savedAt: null
+    }
+  };
+
+  let state = loadState();
+  let activeTab = 'workflow';
+
+  function getAuth() {
+    const t = localStorage.getItem('civicpulse_token');
+    const u = JSON.parse(localStorage.getItem('civicpulse_user') || '{}');
+    if (!t || !u || !u.role) {
+      window.location.href = '/index.html';
+      throw new Error('Missing auth');
+    }
+    return { token: t, user: u };
+  }
+
+  function homeIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`; }
+  function listIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>`; }
+  function usersIcon()  { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>`; }
+  function assignIcon() { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>`; }
+  function chartIcon()  { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>`; }
+  function gearIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`; }
+
+  const NAV_SECTIONS = [
+    { section: 'Management', items: [
+      { id: 'overview',  label: 'Dashboard',       icon: homeIcon() },
+      { id: 'allissues', label: 'All Grievances',  icon: listIcon() },
+      { id: 'assign',    label: 'Assign Officers', icon: assignIcon() },
+      { id: 'users',     label: 'Manage Users',    icon: usersIcon() }
+    ]},
+    { section: 'Analytics', items: [
+      { id: 'reports',  label: 'Analytics & Reports', icon: chartIcon() },
+      { id: 'settings', label: 'System Settings', icon: gearIcon() }
+    ]}
+  ];
+
+  function buildNav() {
+    const container = document.getElementById('navItems');
+    let html = '';
+    for (const sec of NAV_SECTIONS) {
+      html += `<div class="nav-section"><div class="nav-section-label">${sec.section}</div>`;
+      for (const item of sec.items) {
+        html += `<a class="nav-item ${item.id === 'settings' ? 'active' : ''}" href="#" onclick="navigateTo('${item.id}')">${item.icon} ${item.label}</a>`;
+      }
+      html += '</div>';
+    }
+    container.innerHTML = html;
+  }
+
+  function navigateTo(id) {
+    if (id === 'overview')   { window.location.href = '/Dashboard.html'; return; }
+    if (id === 'allissues')  { window.location.href = '/AdminGrievances.html'; return; }
+    if (id === 'users')      { window.location.href = '/ManageUsers.html'; return; }
+    if (id === 'assign')     { window.location.href = '/AssignOfficers.html'; return; }
+    if (id === 'reports')    { window.location.href = '/AdminAnalytics.html'; return; }
+    if (id === 'settings')   { window.location.href = '/AdminSettings.html'; return; }
+  }
+
+  function switchTab(tabId) {
+    activeTab = tabId;
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tabId);
+    });
+    renderTabContent();
+  }
+
+  function renderTabContent() {
+    const el = document.getElementById('tabContent');
+
+    if (activeTab === 'workflow') {
+      el.innerHTML = `
+        <div class="section-title">Workflow Rules</div>
+        <div class="section-help">Configure closure and reopen policy used by admin workflows.</div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="allowReopenDays">Allow Reopen Window (days)</label>
+            <input id="allowReopenDays" type="number" min="0" value="${state.workflow.allowReopenDays}" />
+          </div>
+          <div class="field">
+            <label for="autoCloseDays">Auto-Close Pending After (days)</label>
+            <input id="autoCloseDays" type="number" min="1" value="${state.workflow.autoCloseDays}" />
+          </div>
+          <div class="field full">
+            <div class="toggle-row">
+              <div>
+                <strong>Require closure reason</strong>
+                <p>Force remarks before moving grievances to CLOSED.</p>
+              </div>
+              <label class="switch"><input id="requireClosureReason" type="checkbox" ${state.workflow.requireClosureReason ? 'checked' : ''}><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <strong>Enable citizen feedback prompt</strong>
+                <p>Ask citizens for feedback when grievance becomes RESOLVED.</p>
+              </div>
+              <label class="switch"><input id="enableCitizenFeedback" type="checkbox" ${state.workflow.enableCitizenFeedback ? 'checked' : ''}><span class="slider"></span></label>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    if (activeTab === 'sla') {
+      el.innerHTML = `
+        <div class="section-title">SLA & Escalation</div>
+        <div class="section-help">Set department-wide expected resolution windows.</div>
+        <div class="form-grid">
+          <div class="field"><label for="criticalHours">Critical (hours)</label><input id="criticalHours" type="number" min="1" value="${state.sla.criticalHours}" /></div>
+          <div class="field"><label for="highHours">High (hours)</label><input id="highHours" type="number" min="1" value="${state.sla.highHours}" /></div>
+          <div class="field"><label for="mediumHours">Medium (hours)</label><input id="mediumHours" type="number" min="1" value="${state.sla.mediumHours}" /></div>
+          <div class="field"><label for="lowHours">Low (hours)</label><input id="lowHours" type="number" min="1" value="${state.sla.lowHours}" /></div>
+          <div class="field full"><label for="escalationHours">Escalate after no update (hours)</label><input id="escalationHours" type="number" min="1" value="${state.sla.escalationHours}" /></div>
+        </div>`;
+      return;
+    }
+
+    if (activeTab === 'assignment') {
+      el.innerHTML = `
+        <div class="section-title">Assignment Policy</div>
+        <div class="section-help">Define how tasks should be distributed among officers.</div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="assignmentMode">Assignment Mode</label>
+            <select id="assignmentMode">
+              <option value="BALANCED" ${state.assignment.mode === 'BALANCED' ? 'selected' : ''}>Balanced (least load first)</option>
+              <option value="ROUND_ROBIN" ${state.assignment.mode === 'ROUND_ROBIN' ? 'selected' : ''}>Round Robin</option>
+              <option value="MANUAL_FIRST" ${state.assignment.mode === 'MANUAL_FIRST' ? 'selected' : ''}>Manual by default</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="maxOpenPerOfficer">Max Open Grievances / Officer</label>
+            <input id="maxOpenPerOfficer" type="number" min="1" value="${state.assignment.maxOpenPerOfficer}" />
+          </div>
+          <div class="field">
+            <label for="departmentFallback">Fallback Department</label>
+            <select id="departmentFallback">
+              <option value="GENERAL" ${state.assignment.departmentFallback === 'GENERAL' ? 'selected' : ''}>General</option>
+              <option value="ROADS" ${state.assignment.departmentFallback === 'ROADS' ? 'selected' : ''}>Roads</option>
+              <option value="WATER" ${state.assignment.departmentFallback === 'WATER' ? 'selected' : ''}>Water</option>
+              <option value="SANITATION" ${state.assignment.departmentFallback === 'SANITATION' ? 'selected' : ''}>Sanitation</option>
+              <option value="ELECTRICITY" ${state.assignment.departmentFallback === 'ELECTRICITY' ? 'selected' : ''}>Electricity</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <div class="toggle-row" style="margin:0;">
+              <div>
+                <strong>Restrict cross-department assignment</strong>
+                <p>Only allow officers from same department.</p>
+              </div>
+              <label class="switch"><input id="restrictCrossDepartment" type="checkbox" ${state.assignment.restrictCrossDepartment ? 'checked' : ''}><span class="slider"></span></label>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    el.innerHTML = `
+      <div class="section-title">Notifications</div>
+      <div class="section-help">Configure outbound communication behavior.</div>
+      <div class="form-grid">
+        <div class="field full">
+          <div class="toggle-row">
+            <div><strong>Email citizen on status update</strong><p>Send email when grievance state changes.</p></div>
+            <label class="switch"><input id="emailCitizenOnUpdate" type="checkbox" ${state.notifications.emailCitizenOnUpdate ? 'checked' : ''}><span class="slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><strong>Email officer on assignment</strong><p>Alert officers when new grievances are assigned.</p></div>
+            <label class="switch"><input id="emailOfficerOnAssign" type="checkbox" ${state.notifications.emailOfficerOnAssign ? 'checked' : ''}><span class="slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><strong>SMS citizen on closure</strong><p>Send SMS once grievance is marked CLOSED.</p></div>
+            <label class="switch"><input id="smsCitizenOnClose" type="checkbox" ${state.notifications.smsCitizenOnClose ? 'checked' : ''}><span class="slider"></span></label>
+          </div>
+          <div class="toggle-row">
+            <div><strong>Daily admin digest</strong><p>Morning summary of open, overdue, and escalated cases.</p></div>
+            <label class="switch"><input id="dailyAdminDigest" type="checkbox" ${state.notifications.dailyAdminDigest ? 'checked' : ''}><span class="slider"></span></label>
+          </div>
+        </div>
+        <div class="field full">
+          <label for="digestHour">Digest Time (24h)</label>
+          <input id="digestHour" type="number" min="0" max="23" value="${state.notifications.digestHour}" />
+        </div>
+      </div>`;
+  }
+
+  function loadState() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      return {
+        workflow: { ...DEFAULTS.workflow, ...(parsed.workflow || {}) },
+        sla: { ...DEFAULTS.sla, ...(parsed.sla || {}) },
+        assignment: { ...DEFAULTS.assignment, ...(parsed.assignment || {}) },
+        notifications: { ...DEFAULTS.notifications, ...(parsed.notifications || {}) },
+        meta: { ...DEFAULTS.meta, ...(parsed.meta || {}) }
+      };
+    } catch (e) {
+      return JSON.parse(JSON.stringify(DEFAULTS));
+    }
+  }
+
+  function collectCurrentTab() {
+    if (activeTab === 'workflow') {
+      state.workflow.allowReopenDays = toInt('allowReopenDays', state.workflow.allowReopenDays);
+      state.workflow.autoCloseDays = toInt('autoCloseDays', state.workflow.autoCloseDays);
+      state.workflow.requireClosureReason = checked('requireClosureReason');
+      state.workflow.enableCitizenFeedback = checked('enableCitizenFeedback');
+      return;
+    }
+    if (activeTab === 'sla') {
+      state.sla.criticalHours = toInt('criticalHours', state.sla.criticalHours);
+      state.sla.highHours = toInt('highHours', state.sla.highHours);
+      state.sla.mediumHours = toInt('mediumHours', state.sla.mediumHours);
+      state.sla.lowHours = toInt('lowHours', state.sla.lowHours);
+      state.sla.escalationHours = toInt('escalationHours', state.sla.escalationHours);
+      return;
+    }
+    if (activeTab === 'assignment') {
+      state.assignment.mode = value('assignmentMode', state.assignment.mode);
+      state.assignment.maxOpenPerOfficer = toInt('maxOpenPerOfficer', state.assignment.maxOpenPerOfficer);
+      state.assignment.departmentFallback = value('departmentFallback', state.assignment.departmentFallback);
+      state.assignment.restrictCrossDepartment = checked('restrictCrossDepartment');
+      return;
+    }
+    state.notifications.emailCitizenOnUpdate = checked('emailCitizenOnUpdate');
+    state.notifications.emailOfficerOnAssign = checked('emailOfficerOnAssign');
+    state.notifications.smsCitizenOnClose = checked('smsCitizenOnClose');
+    state.notifications.dailyAdminDigest = checked('dailyAdminDigest');
+    state.notifications.digestHour = toInt('digestHour', state.notifications.digestHour);
+  }
+
+  function saveSettings(event) {
+    event.preventDefault();
+    collectCurrentTab();
+    state.meta.savedBy = user.username;
+    state.meta.savedAt = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    updateSavedAt();
+    showToast('Settings saved.');
+  }
+
+  function resetDefaults() {
+    if (!confirm('Reset all admin settings to defaults?')) return;
+    state = JSON.parse(JSON.stringify(DEFAULTS));
+    renderTabContent();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    updateSavedAt();
+    showToast('Defaults restored.');
+  }
+
+  function downloadSettings() {
+    collectCurrentTab();
+    const data = JSON.stringify(state, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'civicpulse-admin-settings.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function importSettings(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        state = {
+          workflow: { ...DEFAULTS.workflow, ...(parsed.workflow || {}) },
+          sla: { ...DEFAULTS.sla, ...(parsed.sla || {}) },
+          assignment: { ...DEFAULTS.assignment, ...(parsed.assignment || {}) },
+          notifications: { ...DEFAULTS.notifications, ...(parsed.notifications || {}) },
+          meta: { ...DEFAULTS.meta, ...(parsed.meta || {}) }
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        renderTabContent();
+        updateSavedAt();
+        showToast('Settings imported.');
+      } catch (e) {
+        showToast('Invalid JSON file.');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
+  function updateSavedAt() {
+    const label = document.getElementById('savedAt');
+    if (!state.meta.savedAt) {
+      label.textContent = 'No changes saved yet.';
+      return;
+    }
+    const d = new Date(state.meta.savedAt);
+    const readable = d.toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+    label.textContent = 'Last saved by ' + (state.meta.savedBy || 'admin') + ' on ' + readable;
+  }
+
+  function value(id, fallback) {
+    const el = document.getElementById(id);
+    return el ? el.value : fallback;
+  }
+
+  function checked(id) {
+    const el = document.getElementById(id);
+    return !!(el && el.checked);
+  }
+
+  function toInt(id, fallback) {
+    const val = parseInt(value(id, fallback), 10);
+    return Number.isFinite(val) ? val : fallback;
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  function logout() {
+    localStorage.removeItem('civicpulse_token');
+    localStorage.removeItem('civicpulse_user');
+    window.location.href = '/index.html';
+  }
+
+  buildNav();
+  renderTabContent();
+  updateSavedAt();
+</script>
+</body>
+</html>

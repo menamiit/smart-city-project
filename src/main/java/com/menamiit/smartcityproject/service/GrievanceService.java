@@ -144,6 +144,7 @@ public class GrievanceService {
 
     public GrievanceResponse updateOfficerTaskStatus(Long id, String status, String remarks, String token) {
         String username = requireOfficerUsername(token);
+        String requestedStatus = status == null ? null : status.toUpperCase();
 
         Grievance grievance = grievanceRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Grievance not found."));
@@ -152,8 +153,16 @@ public class GrievanceService {
             throw new IllegalArgumentException("Access denied.");
         }
 
-        if (status != null && !status.isBlank()) {
-            grievance.setStatus(status.toUpperCase());
+        if ("RESOLVED".equals(grievance.getStatus()) || "CLOSED".equals(grievance.getStatus())) {
+            throw new IllegalArgumentException("Completed grievances cannot be updated by officers.");
+        }
+
+        if ("CLOSED".equals(requestedStatus) && (remarks == null || remarks.trim().isEmpty())) {
+            throw new IllegalArgumentException("Closure reason is required before closing a grievance.");
+        }
+
+        if (requestedStatus != null && !requestedStatus.isBlank()) {
+            grievance.setStatus(requestedStatus);
         }
         if (remarks != null) {
             grievance.setRemarks(remarks);
@@ -255,6 +264,7 @@ public class GrievanceService {
     // ── Update grievance status (Admin/Officer) ─────────────────────────────-
     public GrievanceResponse updateStatus(Long id, String status, String remarks, String token) {
         String role = jwtUtil.getRoleFromToken(token);
+        String requestedStatus = status == null ? null : status.toUpperCase();
         if (!"ADMIN".equals(role) && !"OFFICER".equals(role)) {
             throw new IllegalArgumentException("Access denied.");
         }
@@ -262,8 +272,16 @@ public class GrievanceService {
         Grievance g = grievanceRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Grievance not found."));
 
-        if (status != null) {
-            g.setStatus(status.toUpperCase());
+        if ("OFFICER".equals(role) && ("RESOLVED".equals(g.getStatus()) || "CLOSED".equals(g.getStatus()))) {
+            throw new IllegalArgumentException("Completed grievances cannot be updated by officers.");
+        }
+
+        if ("OFFICER".equals(role) && "CLOSED".equals(requestedStatus) && (remarks == null || remarks.trim().isEmpty())) {
+            throw new IllegalArgumentException("Closure reason is required before closing a grievance.");
+        }
+
+        if (requestedStatus != null) {
+            g.setStatus(requestedStatus);
         }
         if (remarks != null) {
             g.setRemarks(remarks);

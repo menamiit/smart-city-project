@@ -72,7 +72,7 @@
   .topbar p { font-size: 0.82rem; color: var(--ink-soft); margin-top: 1px; }
   .avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--citizen); color: white; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.9rem; }
 
-  .content { padding: 32px; width: 100%; max-width: 1200px; }
+  .content { padding: 24px 32px 32px; width: 100%; max-width: none; }
 
   .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
   .filter-btn { padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--panel); font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600; cursor: pointer; color: var(--ink-soft); }
@@ -163,9 +163,14 @@
   </div>
   <div class="nav-section">
     <div class="nav-section-label">Main</div>
-    <a class="nav-item" href="dashboard.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Overview</a>
-    <a class="nav-item" href="submit.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Submit Grievance</a>
-    <a class="nav-item active" href="mygrievances.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>My Grievances</a>
+    <a class="nav-item" href="Dashboard.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Overview</a>
+    <a class="nav-item" href="Submit.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Submit Grievance</a>
+    <a class="nav-item active" href="MyGrievances.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>My Grievances</a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-label">Account</div>
+    <a class="nav-item" href="CitizenProfile.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>My Profile</a>
+    <a class="nav-item" href="CitizenNotifications.html"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm6-6V11a6 6 0 1 0-12 0v5l-2 2v1h16v-1l-2-2z"/></svg>Notifications</a>
   </div>
   <div class="sidebar-footer">
     <button class="logout-btn" onclick="logout()">⬡ Sign Out</button>
@@ -194,7 +199,7 @@
       <button class="filter-btn" data-filter="PENDING" onclick="applyFilter(this)">⏳ Pending</button>
       <button class="filter-btn" data-filter="IN_PROGRESS" onclick="applyFilter(this)">⚙️ In Progress</button>
       <button class="filter-btn" data-filter="RESOLVED" onclick="applyFilter(this)">✅ Resolved</button>
-      <a class="new-btn" href="submit.html">＋ New Complaint</a>
+      <a class="new-btn" href="Submit.html">＋ New Complaint</a>
     </div>
 
     <div id="grievanceList" class="grievance-list">
@@ -283,7 +288,7 @@
           <div class="empty-icon">📭</div>
           <div class="empty-title">${currentFilter === 'ALL' ? 'No grievances yet' : 'No ' + currentFilter.toLowerCase() + ' grievances'}</div>
           <div class="empty-sub">${currentFilter === 'ALL' ? 'Submit your first complaint to get started.' : 'All your grievances in this category will appear here.'}</div>
-          <a href="submit.html" class="new-btn" style="display:inline-flex;margin:0 auto">＋ Submit First Complaint</a>
+          <a href="Submit.html" class="new-btn" style="display:inline-flex;margin:0 auto">＋ Submit First Complaint</a>
         </div>`;
       return;
     }

@@ -310,7 +310,7 @@ function renderTaskGrid(tasks, page) {
 function renderTaskCard(task, page) {
   const icon = CATEGORY_ICONS[task.category] || '📌';
   const bg = CATEGORY_COLORS[task.category] || '#f3f4f6';
-  const canUpdate = !page.readOnly;
+  const canUpdate = !page.readOnly && !isCompletedStatus(task.status);
   return `
     <article class="task-card">
       <div class="task-top">
@@ -456,7 +456,7 @@ function openTaskModal(id) {
     </div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeModal()">Close</button>
-      ${OFFICER_PAGES[appState.page].readOnly ? '' : `<button class="btn" onclick="openUpdateModal(${appState.selectedTask.id}, true)">Update status</button>`}
+      ${(OFFICER_PAGES[appState.page].readOnly || isCompletedStatus(appState.selectedTask.status)) ? '' : `<button class="btn" onclick="openUpdateModal(${appState.selectedTask.id}, true)">Update status</button>`}
     </div>
   `;
   showModal();
@@ -466,6 +466,10 @@ function openUpdateModal(id, fromDetail = false) {
   if (fromDetail) closeModal();
   appState.selectedTask = appState.tasks.find(task => task.id === id) || null;
   if (!appState.selectedTask) return;
+  if (isCompletedStatus(appState.selectedTask.status)) {
+    showToast('Resolved/closed grievances cannot be updated.', 'error');
+    return;
+  }
   document.getElementById('modalTitle').textContent = `Update Task #${appState.selectedTask.id}`;
   document.getElementById('modalBody').innerHTML = `
     <div class="modal-grid">
@@ -495,6 +499,10 @@ function openUpdateModal(id, fromDetail = false) {
 }
 
 async function submitStatusUpdate() {
+  if (isCompletedStatus(appState.selectedTask?.status)) {
+    showToast('Resolved/closed grievances cannot be updated.', 'error');
+    return;
+  }
   const status = document.getElementById('statusUpdateSelect').value;
   const remarks = document.getElementById('remarksInput').value.trim();
   try {
@@ -573,6 +581,10 @@ function formatCategory(category) {
 
 function formatStatus(status) {
   return String(status || '').replace(/_/g, ' ');
+}
+
+function isCompletedStatus(status) {
+  return status === 'RESOLVED' || status === 'CLOSED';
 }
 
 function trimText(text, limit) {

@@ -134,9 +134,9 @@
 
     /* ── CONTENT ────────────────────────────────────────────── */
     .content {
-      padding: 32px;
+      padding: 24px 32px 32px;
       width: 100%;
-      max-width: 1200px;
+      max-width: none;
     }
 
     /* Welcome banner */
@@ -405,6 +405,8 @@ function getDynamicNavBadge(itemId) {
 function navigateTo(panelId) {
   if (panelId === 'submit')    { window.location.href = '/Submit.html';          return; }
   if (panelId === 'myissues')  { window.location.href = '/MyGrievances.html';    return; }
+  if (panelId === 'profile' && role === 'CITIZEN') { window.location.href = '/CitizenProfile.html'; return; }
+  if (panelId === 'notifications' && role === 'CITIZEN') { window.location.href = '/CitizenNotifications.html'; return; }
   if (panelId === 'allissues') { window.location.href = '/AdminGrievances.html'; return; }
   if (panelId === 'users')     { window.location.href = '/ManageUsers.html';     return; }
   if (panelId === 'assign')    { window.location.href = '/AssignOfficers.html';  return; }

@@ -3,122 +3,300 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin Analytics</title>
+  <title>CivicPulse - Analytics & Reports</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="/analytics-common.js"></script>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f8fafc; color: #0f172a; }
-    .wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
-    .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .top a { text-decoration: none; color: #2563eb; font-weight: 600; }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
-    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; }
-    .k { font-size: 12px; color: #64748b; margin-bottom: 6px; text-transform: uppercase; }
-    .v { font-size: 24px; font-weight: 700; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #0d1117;
+      --ink-soft: #4b5563;
+      --surface: #f3f5f9;
+      --panel: #ffffff;
+      --accent: #1a56db;
+      --admin: #8b5cf6;
+      --border: #e5e8f0;
+      --sidebar-w: 260px;
+    }
+
+    html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--surface); color: var(--ink); }
+    body.role-admin { --role-color: var(--admin); }
+
+    .app { min-height: 100vh; width: 100%; }
+
+    .sidebar {
+      background: var(--ink); display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0;
+      width: var(--sidebar-w); height: 100vh;
+      overflow-y: auto; z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 24px 20px 20px; display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .logo-icon-sm {
+      width: 34px; height: 34px; background: var(--accent); border-radius: 9px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .logo-icon-sm svg { width: 18px; height: 18px; fill: white; }
+    .logo-text-sm { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; color: white; }
+    .sidebar-role {
+      margin: 16px 16px 8px; padding: 10px 14px; border-radius: 12px;
+      background: rgba(255,255,255,0.06); display: flex; align-items: center; gap: 10px;
+    }
+    .role-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--role-color); flex-shrink: 0; }
+    .role-name-display { font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 700; color: white; text-transform: uppercase; letter-spacing: 0.06em; }
+    .role-username { font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-top: 1px; }
+    .nav-section { padding: 20px 12px 8px; }
+    .nav-section-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.3); padding: 0 8px; margin-bottom: 6px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 10px; cursor: pointer; text-decoration: none;
+      color: rgba(255,255,255,0.55); font-size: 0.88rem; font-weight: 500;
+      transition: background 0.15s, color 0.15s; margin-bottom: 2px;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.9); }
+    .nav-item.active { background: var(--role-color); color: white; }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .logout-btn {
+      width: 100%; padding: 10px; background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.2); border-radius: 10px;
+      color: #f87171; font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
+      font-weight: 500; cursor: pointer; transition: background 0.15s;
+    }
+    .logout-btn:hover { background: rgba(239,68,68,0.22); }
+
+    .main { margin-left: var(--sidebar-w); width: calc(100% - var(--sidebar-w)); min-height: 100vh; }
+    .topbar {
+      background: var(--panel); border-bottom: 1px solid var(--border);
+      padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .topbar-left h1 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.25rem; color: var(--ink); }
+    .topbar-left p { font-size: 0.82rem; color: var(--ink-soft); margin-top: 1px; }
+    .avatar {
+      width: 38px; height: 38px; border-radius: 50%; background: var(--role-color); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.9rem;
+    }
+    .content { padding: 24px 32px 32px; width: 100%; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; }
+    .k { font-size: 0.74rem; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .v { font-family: 'Syne', sans-serif; font-size: 1.9rem; font-weight: 800; }
+
     .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; }
-    .panel h3 { margin: 0 0 10px; font-size: 16px; }
+    .panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; }
+    .panel h3 { margin: 0 0 12px; font-size: 0.98rem; font-family: 'Syne', sans-serif; }
     .zones { margin: 0; padding: 0; list-style: none; }
-    .zones li { padding: 8px 0; border-bottom: 1px dashed #e2e8f0; display: flex; justify-content: space-between; gap: 12px; }
+    .zones li {
+      padding: 10px 0;
+      border-bottom: 1px dashed #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.9rem;
+    }
+    .zones li:last-child { border-bottom: none; }
+
     @media (max-width: 900px) {
-      .grid { grid-template-columns: 1fr 1fr; }
       .charts { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .sidebar { transform: translateX(-100%); }
+      .main { margin-left: 0; width: 100%; }
+      .content { padding: 20px; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="top">
-      <h2>Analytics & Reports</h2>
-      <a href="/Dashboard.html">Back to Dashboard</a>
+<div class="app">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon-sm">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+      </div>
+      <span class="logo-text-sm">CivicPulse</span>
+    </div>
+    <div class="sidebar-role">
+      <div class="role-dot"></div>
+      <div class="role-info">
+        <div class="role-name-display" id="sidebarRole">ADMIN</div>
+        <div class="role-username" id="sidebarUsername">@user</div>
+      </div>
+    </div>
+    <div id="navItems"></div>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">⬡ Sign Out</button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Analytics & Reports</h1>
+        <p id="topbarDate"></p>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" id="userAvatar">?</div>
+      </div>
     </div>
 
-    <div class="grid">
-      <div class="card"><div class="k">Resolved</div><div id="resolved" class="v">0</div></div>
-      <div class="card"><div class="k">On-Time</div><div id="ontime" class="v">0</div></div>
-      <div class="card"><div class="k">Late</div><div id="late" class="v">0</div></div>
-      <div class="card"><div class="k">SLA %</div><div id="sla" class="v">0%</div></div>
-    </div>
+    <div class="content">
+      <div class="stats-grid">
+        <div class="card"><div class="k">Resolved</div><div id="resolved" class="v">0</div></div>
+        <div class="card"><div class="k">On-Time</div><div id="ontime" class="v">0</div></div>
+        <div class="card"><div class="k">Late</div><div id="late" class="v">0</div></div>
+        <div class="card"><div class="k">SLA %</div><div id="sla" class="v">0%</div></div>
+      </div>
 
-    <div class="charts">
-      <div class="panel">
-        <h3>Complaint Distribution by Category</h3>
-        <canvas id="categoryChart"></canvas>
-      </div>
-      <div class="panel">
-        <h3>Complaint Distribution by Zone</h3>
-        <canvas id="zoneChart"></canvas>
-      </div>
-      <div class="panel">
-        <h3>SLA Performance</h3>
-        <canvas id="slaChart"></canvas>
-      </div>
-      <div class="panel">
-        <h3>Red Zones</h3>
-        <ul id="redZones" class="zones"></ul>
+      <div class="charts">
+        <div class="panel">
+          <h3>Complaint Distribution by Category</h3>
+          <canvas id="categoryChart"></canvas>
+        </div>
+        <div class="panel">
+          <h3>Complaint Distribution by Zone</h3>
+          <canvas id="zoneChart"></canvas>
+        </div>
+        <div class="panel">
+          <h3>SLA Performance</h3>
+          <canvas id="slaChart"></canvas>
+        </div>
+        <div class="panel">
+          <h3>Red Zones</h3>
+          <ul id="redZones" class="zones"></ul>
+        </div>
       </div>
     </div>
   </div>
+</div>
 
-  <script>
-    const { token, user } = AnalyticsCommon.getAuth();
-    if (user.role !== 'ADMIN') {
-      alert('Access denied. Admin only.');
-      window.location.href = '/Dashboard.html';
+<script>
+  const { token, user } = AnalyticsCommon.getAuth();
+
+  if (user.role !== 'ADMIN') {
+    alert('Access denied. Admin only.');
+    window.location.href = '/Dashboard.html';
+  }
+
+  document.body.classList.add('role-admin');
+  document.getElementById('sidebarRole').textContent = 'ADMIN';
+  document.getElementById('sidebarUsername').textContent = '@' + user.username;
+  document.getElementById('userAvatar').textContent = user.username.charAt(0).toUpperCase();
+  document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('en-IN', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  function homeIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`; }
+  function listIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>`; }
+  function usersIcon()  { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>`; }
+  function assignIcon() { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>`; }
+  function chartIcon()  { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>`; }
+  function gearIcon()   { return `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>`; }
+
+  const NAV_SECTIONS = [
+    { section: 'Management', items: [
+      { id: 'overview',  label: 'Dashboard',       icon: homeIcon() },
+      { id: 'allissues', label: 'All Grievances',  icon: listIcon() },
+      { id: 'assign',    label: 'Assign Officers', icon: assignIcon() },
+      { id: 'users',     label: 'Manage Users',    icon: usersIcon() }
+    ]},
+    { section: 'Analytics', items: [
+      { id: 'reports',  label: 'Analytics & Reports', icon: chartIcon() },
+      { id: 'settings', label: 'System Settings', icon: gearIcon() }
+    ]}
+  ];
+
+  function buildNav() {
+    const container = document.getElementById('navItems');
+    let html = '';
+    for (const sec of NAV_SECTIONS) {
+      html += `<div class="nav-section"><div class="nav-section-label">${sec.section}</div>`;
+      for (const item of sec.items) {
+        html += `<a class="nav-item ${item.id === 'reports' ? 'active' : ''}" href="#" onclick="navigateTo('${item.id}')">${item.icon} ${item.label}</a>`;
+      }
+      html += '</div>';
     }
+    container.innerHTML = html;
+  }
 
-    function pie(canvasId, labels, data) {
-      return new Chart(document.getElementById(canvasId), {
-        type: 'doughnut',
-        data: { labels, datasets: [{ data, backgroundColor: AnalyticsCommon.palette() }] },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-      });
-    }
+  function navigateTo(id) {
+    if (id === 'overview')   { window.location.href = '/Dashboard.html'; return; }
+    if (id === 'allissues')  { window.location.href = '/AdminGrievances.html'; return; }
+    if (id === 'users')      { window.location.href = '/ManageUsers.html'; return; }
+    if (id === 'assign')     { window.location.href = '/AssignOfficers.html'; return; }
+    if (id === 'reports')    { window.location.href = '/AdminAnalytics.html'; return; }
+  }
 
-    function bar(canvasId, labels, data) {
-      return new Chart(document.getElementById(canvasId), {
+  function logout() {
+    localStorage.removeItem('civicpulse_token');
+    localStorage.removeItem('civicpulse_user');
+    window.location.href = '/index.html';
+  }
+
+  function pie(canvasId, labels, data) {
+    return new Chart(document.getElementById(canvasId), {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data, backgroundColor: AnalyticsCommon.palette() }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  function bar(canvasId, labels, data) {
+    return new Chart(document.getElementById(canvasId), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'Count', data, backgroundColor: '#0ea5e9' }] },
+      options: { responsive: true, scales: { y: { beginAtZero: true } } }
+    });
+  }
+
+  async function load() {
+    try {
+      const [cat, zone, sla, red] = await Promise.all([
+        AnalyticsCommon.fetchJson('/api/analytics/distribution/category', token),
+        AnalyticsCommon.fetchJson('/api/analytics/distribution/zone', token),
+        AnalyticsCommon.fetchJson('/api/analytics/sla/summary', token),
+        AnalyticsCommon.fetchJson('/api/analytics/red-zones?minComplaints=3', token)
+      ]);
+
+      document.getElementById('resolved').textContent = sla.totalResolved ?? 0;
+      document.getElementById('ontime').textContent = sla.onTimeResolved ?? 0;
+      document.getElementById('late').textContent = sla.lateResolved ?? 0;
+      document.getElementById('sla').textContent = (sla.compliancePercent ?? 0) + '%';
+
+      pie('categoryChart', cat.map(x => x.label), cat.map(x => x.total));
+      bar('zoneChart', zone.map(x => x.label), zone.map(x => x.total));
+
+      new Chart(document.getElementById('slaChart'), {
         type: 'bar',
-        data: { labels, datasets: [{ label: 'Count', data, backgroundColor: '#0ea5e9' }] },
+        data: {
+          labels: ['On-Time', 'Late'],
+          datasets: [{ label: 'Resolved Cases', data: [sla.onTimeResolved || 0, sla.lateResolved || 0], backgroundColor: ['#22c55e', '#ef4444'] }]
+        },
         options: { responsive: true, scales: { y: { beginAtZero: true } } }
       });
+
+      const redEl = document.getElementById('redZones');
+      redEl.innerHTML = red.length
+        ? red.map(z => '<li><span>' + z.zone + '</span><span>' + z.totalComplaints + ' complaints | ' + z.reopenRatePercent + '% reopen</span></li>').join('')
+        : '<li><span>No red zones at current threshold.</span><span></span></li>';
+    } catch (err) {
+      alert(err.message || 'Failed to load analytics');
     }
+  }
 
-    async function load() {
-      try {
-        const [cat, zone, sla, red] = await Promise.all([
-          AnalyticsCommon.fetchJson('/api/analytics/distribution/category', token),
-          AnalyticsCommon.fetchJson('/api/analytics/distribution/zone', token),
-          AnalyticsCommon.fetchJson('/api/analytics/sla/summary', token),
-          AnalyticsCommon.fetchJson('/api/analytics/red-zones?minComplaints=3', token)
-        ]);
-
-        document.getElementById('resolved').textContent = sla.totalResolved ?? 0;
-        document.getElementById('ontime').textContent = sla.onTimeResolved ?? 0;
-        document.getElementById('late').textContent = sla.lateResolved ?? 0;
-        document.getElementById('sla').textContent = (sla.compliancePercent ?? 0) + '%';
-
-        pie('categoryChart', cat.map(x => x.label), cat.map(x => x.total));
-        bar('zoneChart', zone.map(x => x.label), zone.map(x => x.total));
-
-        new Chart(document.getElementById('slaChart'), {
-          type: 'bar',
-          data: {
-            labels: ['On-Time', 'Late'],
-            datasets: [{ label: 'Resolved Cases', data: [sla.onTimeResolved || 0, sla.lateResolved || 0], backgroundColor: ['#22c55e', '#ef4444'] }]
-          },
-          options: { responsive: true, scales: { y: { beginAtZero: true } } }
-        });
-
-        const redEl = document.getElementById('redZones');
-        redEl.innerHTML = red.length
-          ? red.map(z => '<li><span>' + z.zone + '</span><span>' + z.totalComplaints + ' complaints | ' + z.reopenRatePercent + '% reopen</span></li>').join('')
-          : '<li><span>No red zones at current threshold.</span><span></span></li>';
-      } catch (err) {
-        alert(err.message || 'Failed to load analytics');
-      }
-    }
-
-    load();
-  </script>
+  buildNav();
+  load();
+</script>
 </body>
 </html>

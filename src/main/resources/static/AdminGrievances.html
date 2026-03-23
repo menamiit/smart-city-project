@@ -86,7 +86,7 @@
       display: flex; align-items: center; justify-content: center;
       font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.9rem;
     }
-    .content { padding: 32px; width: 100%; max-width: 1200px; }
+    .content { padding: 24px 32px 32px; width: 100%; max-width: none; }
 
     @media (max-width: 640px) {
       .sidebar { transform: translateX(-100%); }
@@ -176,7 +176,8 @@
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 12px;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
     }
     .table-header {
       padding: 16px 20px;
@@ -197,6 +198,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
+      min-width: 1240px;
     }
     thead th {
       background: var(--surface);
@@ -219,8 +221,14 @@
       padding: 14px 16px;
       font-size: 0.92rem;
       vertical-align: middle;
+      white-space: nowrap;
     }
-    .td-title { font-weight: 600; max-width: 240px; }
+    .td-title {
+      font-weight: 600;
+      max-width: 240px;
+      white-space: normal;
+      line-height: 1.35;
+    }
     .td-desc {
       max-width: 200px;
       overflow: hidden;
@@ -229,6 +237,7 @@
       color: #6b7280;
       font-size: 0.85rem;
     }
+    .td-dept-muted { color: #9ca3af; }
 
     /* ── Status Badge ── */
     .badge {
@@ -764,7 +773,7 @@
         <td class="td-title">${escHtml(g.title ?? '—')}</td>
         <td class="td-desc" title="${escHtml(g.description ?? '')}">${escHtml(g.description ?? '—')}</td>
         <td>${escHtml(g.category ?? '—')}</td>
-        <td>${escHtml(g.department ?? '<span style="color:#9ca3af">Unassigned</span>')}</td>
+        <td>${g.department ? escHtml(g.department) : '<span class="td-dept-muted">Unassigned</span>'}</td>
         <td><span class="priority-${g.priority ?? 'LOW'}">${g.priority ?? '—'}</span></td>
         <td><span class="badge badge-${g.status}">${formatStatus(g.status)}</span></td>
         <td>${g.rating ? `${'★'.repeat(g.rating)}${'☆'.repeat(5 - g.rating)}` : '—'}</td>

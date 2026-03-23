@@ -80,6 +80,8 @@ public class SecurityConfig {
                                 "/officerassignedtasks.html",
                                 "/adminanalytics.html",
                                 "/AdminAnalytics.html",
+                                "/adminsettings.html",
+                                "/AdminSettings.html",
                                 "/officeranalytics.html",
                                 "/OfficerAnalytics.html",
                                 "/analytics-common.js",

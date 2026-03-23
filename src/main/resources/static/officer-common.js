@@ -36,6 +36,13 @@ const OFFICER_PAGES = {
     hero: 'Officer Profile',
     heroText: 'Keep your contact details visible and monitor your current service load from one place.',
     primaryStat: 'assigned'
+  },
+  analytics: {
+    title: 'My Analytics',
+    subtitle: 'Operational insights based on your assigned and completed workload.',
+    hero: 'Officer Analytics',
+    heroText: 'Understand workload distribution and SLA trends with live officer analytics.',
+    primaryStat: 'completed'
   }
 };
 
@@ -83,6 +90,7 @@ const appState = {
   tasks: [],
   stats: null,
   profile: null,
+  analytics: null,
   search: '',
   statusFilter: 'ALL',
   selectedTask: null
@@ -128,6 +136,8 @@ function initOfficerPage() {
   wireModal();
   if (appState.page === 'profile') {
     loadOfficerProfile();
+  } else if (appState.page === 'analytics') {
+    loadOfficerAnalytics();
   } else {
     loadOfficerTasks();
   }
@@ -197,6 +207,23 @@ async function loadOfficerProfile() {
     renderProfilePage(page);
   } catch (error) {
     renderError(page, error.message || 'Could not load profile.');
+  }
+}
+
+async function loadOfficerAnalytics() {
+  const page = OFFICER_PAGES.analytics;
+  renderShell(page, true);
+  try {
+    const [stats, analytics] = await Promise.all([
+      fetchJson('/api/officer/stats', { headers: authHeaders() }),
+      fetchJson('/api/analytics/officer/me', { headers: authHeaders() })
+    ]);
+    appState.stats = stats;
+    appState.analytics = analytics;
+    buildNav();
+    renderAnalyticsPage(page);
+  } catch (error) {
+    renderError(page, error.message || 'Could not load analytics.');
   }
 }
 
@@ -408,6 +435,81 @@ function renderProfilePage(page) {
   `;
 }
 
+function renderAnalyticsPage(page) {
+  renderShell(page, false);
+  const analytics = appState.analytics || {};
+  const stats = appState.stats || {};
+  document.getElementById('pageBody').innerHTML = `
+    <section class="stats-grid">
+      ${renderStatCard('Assigned', analytics.assigned ?? stats.assigned ?? 0)}
+      ${renderStatCard('Pending', analytics.pending ?? stats.pending ?? 0)}
+      ${renderStatCard('In Progress', analytics.inProgress ?? stats.inProgress ?? 0)}
+      ${renderStatCard('Completed', analytics.completed ?? stats.completed ?? 0)}
+    </section>
+    <section class="panel" style="padding:20px;">
+      <div class="panel-header" style="padding:0 0 14px 0;">
+        <div>
+          <div class="panel-title">${page.title}</div>
+          <div class="panel-subtitle">${page.subtitle}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;" id="analyticsGrid">
+        <div class="note" style="background:#fff;">
+          <strong style="display:block;margin-bottom:10px;">Workload Status</strong>
+          <canvas id="workChart"></canvas>
+        </div>
+        <div class="note" style="background:#fff;">
+          <strong style="display:block;margin-bottom:10px;">SLA Compliance</strong>
+          <canvas id="slaChart"></canvas>
+        </div>
+      </div>
+    </section>
+  `;
+
+  if (window.innerWidth <= 1080) {
+    const grid = document.getElementById('analyticsGrid');
+    if (grid) {
+      grid.style.gridTemplateColumns = '1fr';
+    }
+  }
+
+  if (typeof Chart === 'undefined') {
+    showToast('Chart library is unavailable.', 'error');
+    return;
+  }
+
+  const pending = Number(analytics.pending || 0);
+  const inProgress = Number(analytics.inProgress || 0);
+  const completed = Number(analytics.completed || 0);
+  const onTime = Number((analytics.sla && analytics.sla.onTimeResolved) || 0);
+  const late = Number((analytics.sla && analytics.sla.lateResolved) || 0);
+
+  new Chart(document.getElementById('workChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Pending', 'In Progress', 'Completed'],
+      datasets: [{
+        data: [pending, inProgress, completed],
+        backgroundColor: ['#f59e0b', '#0ea5e9', '#22c55e']
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  new Chart(document.getElementById('slaChart'), {
+    type: 'bar',
+    data: {
+      labels: ['On-Time', 'Late'],
+      datasets: [{
+        label: 'Resolved Cases',
+        data: [onTime, late],
+        backgroundColor: ['#22c55e', '#ef4444']
+      }]
+    },
+    options: { responsive: true, scales: { y: { beginAtZero: true } } }
+  });
+}
+
 function renderError(page, message) {
   renderShell(page, false);
   document.getElementById('pageBody').innerHTML = `
@@ -487,6 +589,7 @@ function openUpdateModal(id, fromDetail = false) {
       <div class="modal-field full">
         <div class="modal-label">Remarks</div>
         <textarea id="remarksInput" class="textarea" rows="5" placeholder="Add field update, site note, completion summary, or blocker.">${escapeHtml(appState.selectedTask.remarks || '')}</textarea>
+        <div style="margin-top:8px;color:var(--ink-soft);font-size:0.8rem;">When setting status to <strong>CLOSED</strong>, closure reason is mandatory.</div>
       </div>
     </div>
     <div class="modal-actions">
@@ -505,6 +608,10 @@ async function submitStatusUpdate() {
   }
   const status = document.getElementById('statusUpdateSelect').value;
   const remarks = document.getElementById('remarksInput').value.trim();
+  if (status === 'CLOSED' && !remarks) {
+    showToast('Closure reason is required to close a grievance.', 'error');
+    return;
+  }
   try {
     const updated = await fetchJson(`/api/officer/tasks/${appState.selectedTask.id}/status`, {
       method: 'PUT',
